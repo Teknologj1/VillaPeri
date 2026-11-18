@@ -6,6 +6,8 @@ import {
   diferencaEmDias,
   ehNoiteDeFimDeSemana,
   hojeNaPropriedade,
+  horasAteCheckin,
+  instanteNaPropriedade,
   noitesDaEstadia,
   somarDias,
 } from "./data";
@@ -112,6 +114,43 @@ describe("diaDaSemana e fim de semana", () => {
     const config = [5, 6, 0];
     expect(ehNoiteDeFimDeSemana("2026-11-22", config)).toBe(true);
     expect(ehNoiteDeFimDeSemana("2026-11-19", config)).toBe(false);
+  });
+});
+
+describe("instanteNaPropriedade e horasAteCheckin", () => {
+  it("resolve a hora local para o instante certo em UTC−3", () => {
+    // Check-in das 14h de 11/12/2026 em Pirenópolis = 17h UTC.
+    expect(instanteNaPropriedade("2026-12-11", "14:00", SP).toISOString()).toBe(
+      "2026-12-11T17:00:00.000Z",
+    );
+  });
+
+  it("acerta meia-noite, que é o caso que mais quebra", () => {
+    expect(instanteNaPropriedade("2026-12-11", "00:00", SP).toISOString()).toBe(
+      "2026-12-11T03:00:00.000Z",
+    );
+  });
+
+  it("acerta num fuso com horário de verão, dos dois lados da virada", () => {
+    // Nova York: UTC−5 no inverno, UTC−4 no verão. O mesmo "12:00" local
+    // cai em instantes diferentes, e é por isso que o cálculo tem duas passadas.
+    const NY = "America/New_York";
+    expect(instanteNaPropriedade("2026-01-15", "12:00", NY).toISOString()).toBe(
+      "2026-01-15T17:00:00.000Z",
+    );
+    expect(instanteNaPropriedade("2026-07-15", "12:00", NY).toISOString()).toBe(
+      "2026-07-15T16:00:00.000Z",
+    );
+  });
+
+  it("conta as horas que faltam para o check-in", () => {
+    const agora = new Date("2026-12-11T07:00:00Z"); // 04h em Pirenópolis
+    expect(horasAteCheckin("2026-12-11", "14:00", SP, agora)).toBe(10);
+  });
+
+  it("devolve negativo quando o check-in já passou", () => {
+    const agora = new Date("2026-12-11T20:00:00Z"); // 17h local
+    expect(horasAteCheckin("2026-12-11", "14:00", SP, agora)).toBe(-3);
   });
 });
 

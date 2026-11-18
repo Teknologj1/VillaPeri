@@ -9,3 +9,4 @@
 
 export * from "@/modules/anfitriao/schema";
 export * from "@/modules/auditoria/schema";
+export * from "@/modules/calendario/schema";

@@ -204,6 +204,14 @@ export const tipoAcomodacao = pgTable(
     descricao: text("descricao"),
     /** Máximo de pessoas que o tipo aceita. */
     capacidade: integer("capacidade").notNull(),
+    /**
+     * Os números que todo anúncio de hospedagem mostra. Ficam em colunas
+     * próprias, e não soltos na descrição, porque o site os exibe em
+     * destaque e os dados estruturados de SEO os declaram.
+     */
+    quartos: integer("quartos").notNull().default(1),
+    camas: integer("camas").notNull().default(1),
+    banheiros: integer("banheiros").notNull().default(1),
     modoPreco: modoPreco("modo_preco").notNull().default("acomodacao"),
     /** Ocupação já inclusa no preço base, quando o modo é por ocupação. */
     ocupacaoBase: integer("ocupacao_base").notNull().default(2),

@@ -113,3 +113,78 @@ export function comoNoite(valor: string): Noite {
   paraUtc(valor);
   return valor;
 }
+
+/** Deslocamento do fuso, em minutos, no instante dado. */
+function deslocamentoEmMinutos(fuso: string, instante: Date): number {
+  const partes = new Intl.DateTimeFormat("en-US", {
+    timeZone: fuso,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(instante);
+
+  const valor = (tipo: string) => {
+    const p = partes.find((x) => x.type === tipo)?.value;
+    if (p === undefined) throw new Error(`Fuso inválido: "${fuso}".`);
+    return Number(p);
+  };
+
+  const comoSeFosseUtc = Date.UTC(
+    valor("year"),
+    valor("month") - 1,
+    valor("day"),
+    valor("hour") % 24, // meia-noite sai como "24" em alguns ambientes
+    valor("minute"),
+    valor("second"),
+  );
+  return (comoSeFosseUtc - instante.getTime()) / 60_000;
+}
+
+/**
+ * O instante exato em que uma hora de uma data acontece no fuso da
+ * propriedade. `instanteNaPropriedade("2026-12-11", "14:00", "America/Sao_Paulo")`
+ * é o check-in das 14h daquele dia, como ponto na linha do tempo.
+ *
+ * Duas passadas porque a primeira estima o deslocamento no instante errado:
+ * em fuso com horário de verão, o deslocamento muda conforme a data. O Brasil
+ * não tem mais horário de verão, mas o sistema nasce multi-anfitrião e não
+ * custa estar certo em qualquer fuso.
+ */
+export function instanteNaPropriedade(
+  noite: Noite,
+  hora: string,
+  fuso: string,
+): Date {
+  const [h = "0", m = "0"] = hora.split(":");
+  const base = Date.parse(
+    `${noite}T${h.padStart(2, "0")}:${m.padStart(2, "0")}:00Z`,
+  );
+  if (Number.isNaN(base)) {
+    throw new Error(`Data ou hora inválida: "${noite}" "${hora}".`);
+  }
+
+  let instante = new Date(base - deslocamentoEmMinutos(fuso, new Date(base)) * 60_000);
+  instante = new Date(base - deslocamentoEmMinutos(fuso, instante) * 60_000);
+  return instante;
+}
+
+/**
+ * Horas de `agora` até o check-in da data de entrada. Negativo se já passou.
+ *
+ * É o que a regra de antecedência mínima compara: "reserva para o mesmo dia
+ * só até certo horário" depende do horário de check-in da casa, não da
+ * meia-noite.
+ */
+export function horasAteCheckin(
+  entrada: Noite,
+  horaCheckin: string,
+  fuso: string,
+  agora: Date = new Date(),
+): number {
+  const checkin = instanteNaPropriedade(entrada, horaCheckin, fuso);
+  return (checkin.getTime() - agora.getTime()) / 3_600_000;
+}

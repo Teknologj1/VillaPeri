@@ -45,6 +45,31 @@ const eslintConfig = defineConfig([
     rules: { "no-restricted-imports": "off" },
   },
 
+  {
+    // Um schema pode referenciar o schema de outro módulo, porque é assim que
+    // se declara chave estrangeira — `noite_ocupada.unidade_id` tem de apontar
+    // para `unidade` de verdade, não para um uuid solto.
+    //
+    // Isso não afrouxa a fronteira: o que ela impede é código de negócio ler a
+    // tabela do vizinho em vez de perguntar ao serviço dele. Integridade
+    // referencial é do banco, não do módulo.
+    files: ["src/modules/*/schema.ts"],
+    rules: { "no-restricted-imports": "off" },
+  },
+
+  {
+    // Testes de integração montam cenário por fora do caminho normal: criam
+    // dois anfitriões com a conexão de owner para depois provar, pela conexão
+    // da aplicação, que um não enxerga o outro. Precisam alcançar as tabelas
+    // e o cliente direto — é justamente esse acesso privilegiado que torna a
+    // prova válida.
+    //
+    // A exceção é estreita de propósito: só `*.int.test.ts`, nunca código de
+    // produção nem teste de unidade.
+    files: ["src/**/*.int.test.ts", "tests/**/*.ts"],
+    rules: { "no-restricted-imports": "off" },
+  },
+
   globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
 ]);
 
