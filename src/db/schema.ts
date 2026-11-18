@@ -7,4 +7,5 @@
  * saindo de um lugar só.
  */
 
-export {};
+export * from "@/modules/anfitriao/schema";
+export * from "@/modules/auditoria/schema";

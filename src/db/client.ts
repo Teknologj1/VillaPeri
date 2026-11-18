@@ -21,3 +21,11 @@ const cliente = postgres(env.DATABASE_URL, {
 export const db = drizzle(cliente, { schema });
 
 export type Db = typeof db;
+
+/**
+ * Encerra o pool. Só para testes e scripts: num processo de servidor o pool
+ * vive enquanto o processo viver.
+ */
+export async function fecharConexao(): Promise<void> {
+  await cliente.end();
+}

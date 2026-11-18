@@ -25,9 +25,17 @@ if (!process.env.DATABASE_URL_MIGRATOR) {
   );
 }
 
-const cliente = postgres(url, { max: 1 });
+async function aplicar() {
+  const cliente = postgres(url!, { max: 1 });
+  try {
+    await migrate(drizzle(cliente), { migrationsFolder: "./src/db/migrations" });
+    console.log("Migrações aplicadas.");
+  } finally {
+    await cliente.end();
+  }
+}
 
-await migrate(drizzle(cliente), { migrationsFolder: "./src/db/migrations" });
-await cliente.end();
-
-console.log("Migrações aplicadas.");
+aplicar().catch((erro) => {
+  console.error(erro);
+  process.exit(1);
+});
