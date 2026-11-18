@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: villaperi
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://villaperi_app:dev_app@localhost:5432/villaperi
+      DATABASE_URL_MIGRATOR: postgresql://villaperi_owner:dev_owner@localhost:5432/villaperi
+      TZ_PROPRIEDADE: America/Sao_Paulo
+      # O servidor roda em UTC de propósito: é assim que erros de fuso
+      # aparecem no CI em vez de só em produção.
+      TZ: UTC
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Criar os papéis do banco
+        run: |
+          psql "postgresql://postgres:postgres@localhost:5432/villaperi" <<'SQL'
+          CREATE ROLE villaperi_owner LOGIN PASSWORD 'dev_owner' BYPASSRLS;
+          CREATE ROLE villaperi_app   LOGIN PASSWORD 'dev_app'   NOBYPASSRLS;
+          ALTER DATABASE villaperi OWNER TO villaperi_owner;
+          ALTER SCHEMA public OWNER TO villaperi_owner;
+          GRANT USAGE ON SCHEMA public TO villaperi_app;
+          ALTER DEFAULT PRIVILEGES FOR ROLE villaperi_owner IN SCHEMA public
+            GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO villaperi_app;
+          ALTER DEFAULT PRIVILEGES FOR ROLE villaperi_owner IN SCHEMA public
+            GRANT USAGE, SELECT ON SEQUENCES TO villaperi_app;
+          SQL
+
+      - run: npm run db:migrate
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run test:int
