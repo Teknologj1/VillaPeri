@@ -36,6 +36,27 @@
       "when": 1795026997722,
       "tag": "0004_quartos_camas_banheiros",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795027630046,
+      "tag": "0005_regras_da_casa",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795027926480,
+      "tag": "0006_tarifas",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795027947545,
+      "tag": "0007_forcar_rls_tarifas",
+      "breakpoints": true
     }
   ]
 }

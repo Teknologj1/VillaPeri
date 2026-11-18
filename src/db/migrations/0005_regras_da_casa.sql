@@ -1,0 +1,2 @@
+ALTER TABLE "propriedade" ADD COLUMN "dias_fim_de_semana" jsonb DEFAULT '[5,6]'::jsonb NOT NULL;--> statement-breakpoint
+ALTER TABLE "propriedade" ADD COLUMN "regras_da_casa" jsonb DEFAULT '[]'::jsonb NOT NULL;

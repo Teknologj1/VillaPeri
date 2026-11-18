@@ -179,6 +179,22 @@ export const propriedade = pgTable(
     moeda: text("moeda").notNull().default("BRL"),
     checkinPadrao: time("checkin_padrao").notNull().default("14:00"),
     checkoutPadrao: time("checkout_padrao").notNull().default("12:00"),
+
+    /**
+     * Noites que contam como fim de semana para efeito de tarifa.
+     * Padrão sexta e sábado; é configuração do proprietário, não constante.
+     */
+    diasFimDeSemana: jsonb("dias_fim_de_semana")
+      .$type<number[]>()
+      .notNull()
+      .default([5, 6]),
+
+    /**
+     * Regras da casa, em texto. Alimentam o site e a RIIA pela mesma fonte —
+     * se ficarem só no anúncio de um canal, a secretária de IA responde
+     * errado quando o hóspede perguntar sobre festa, barulho ou som.
+     */
+    regrasDaCasa: jsonb("regras_da_casa").$type<string[]>().notNull().default([]),
   },
   (t) => [
     index("propriedade_anfitriao_idx").on(t.anfitriaoId),

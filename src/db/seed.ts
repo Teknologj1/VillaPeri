@@ -14,6 +14,9 @@ import {
   unidade,
 } from "@/modules/anfitriao/schema";
 
+import { feriadosNoPeriodo } from "@/modules/tarifas/feriados";
+import { feriado } from "@/modules/tarifas/schema";
+
 import * as schema from "./schema";
 
 config({ path: [".env.local", ".env"], quiet: true });
@@ -248,6 +251,19 @@ const COMODIDADES = [
   "Guarda-volumes para chegada cedo ou saída tarde",
 ];
 
+/**
+ * Regras da casa, do anúncio. Ficam no banco, e não só no texto do anúncio,
+ * porque a RIIA responde por elas no WhatsApp: se morarem só num canal, a
+ * secretária de IA erra quando perguntarem sobre festa, barulho ou som.
+ */
+const REGRAS_DA_CASA = [
+  "Não é permitido festa ou churrasco com pessoas além das contratadas na hospedagem.",
+  "Não é permitido barulho depois das 22 horas.",
+  "Durante o dia, pedimos bom senso com o volume: evite música alta.",
+  "Som automotivo é proibido.",
+  "Recebemos a visita de animais silvestres, principalmente micos. Pedimos que não sejam alimentados.",
+];
+
 const DESCRICAO = `Casa de temporada no Jardim Santa Bárbara, a 6 minutos de carro do Centro Histórico de Pirenópolis e vizinha a uma reserva ambiental.
 
 Locada inteira e exclusiva para uma única reserva.
@@ -326,10 +342,17 @@ async function semear() {
         uf: "GO",
         fuso: "America/Sao_Paulo",
         moeda: "BRL",
+        regrasDaCasa: REGRAS_DA_CASA,
       })
       .returning();
   }
   if (!prop) throw new Error("Não foi possível criar a propriedade.");
+
+  // Idempotente: atualiza as regras mesmo se a propriedade já existia.
+  await db
+    .update(propriedade)
+    .set({ regrasDaCasa: REGRAS_DA_CASA })
+    .where(eq(propriedade.id, prop.id));
 
   console.log("Semeando a casa…");
   const camas = SUITES.reduce((n, s) => n + s.camasCasal + s.camasSolteiro, 0);
@@ -356,8 +379,11 @@ async function semear() {
         quartos: SUITES.length,
         camas,
         banheiros: 3,
-        modoPreco: "acomodacao",
-        ocupacaoBase: 2,
+        // Por ocupação: um casal não paga o mesmo que onze pessoas numa casa
+        // alugada inteira. O valor por pessoa adicional entra com a tabela de
+        // tarifas.
+        modoPreco: "ocupacao",
+        ocupacaoBase: 4,
         comodidades: COMODIDADES,
         fotos: [],
       })
@@ -379,6 +405,22 @@ async function semear() {
       nome: "Villa Peri",
     });
   }
+
+  console.log("Semeando os feriados nacionais…");
+  const ANO = new Date().getUTCFullYear();
+  const feriadosGerados = feriadosNoPeriodo(ANO, ANO + 4);
+  const feriadosNovos = await db
+    .insert(feriado)
+    .values(
+      feriadosGerados.map((f) => ({
+        anfitriaoId: villaPeri.id,
+        data: f.data,
+        nome: f.nome,
+        ambito: f.ambito,
+      })),
+    )
+    .onConflictDoNothing()
+    .returning({ id: feriado.id });
 
   console.log("Semeando os cinco perfis e a matriz de permissões…");
   for (const [nome, cfg] of Object.entries(MATRIZ)) {
@@ -426,13 +468,17 @@ async function semear() {
       `${tipo.quartos} suítes, ${tipo.camas} camas, ${tipo.banheiros} banheiros`,
   );
   console.log(`  comodidades  ${COMODIDADES.length} itens`);
+  console.log(
+    `  feriados     ${feriadosGerados.length} nacionais de ${ANO} a ${ANO + 4}` +
+      ` (${feriadosNovos.length} novos)`,
+  );
 
   if (capacidadeDasSuites !== tipo.capacidade) {
     console.log(
-      `\n  ATENÇÃO: o anúncio diz ${tipo.capacidade} hóspedes, mas as suítes\n` +
-        `  somam ${capacidadeDasSuites} (3 + 3 + 4). Falta uma cama extra, um sofá-cama\n` +
-        `  ou é erro do anúncio? Isso muda a validação de capacidade e o preço\n` +
-        `  por pessoa adicional.`,
+      `\n  Nota: as suítes somam ${capacidadeDasSuites} pessoas (3 + 3 + 4) e a capacidade é\n` +
+        `  ${tipo.capacidade}. A diferença é a cama extra, confirmada pelo proprietário.\n` +
+        `  Falta saber em qual suíte ela fica — o kit de enxoval é calculado a\n` +
+        `  partir da cama montada em cada cômodo.`,
     );
   }
 
