@@ -41,8 +41,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/fotos/piscina-vista-pergolado.jpg",
-        width: 1230,
-        height: 690,
+        width: 1167,
+        height: 627,
         alt: "Piscina da Villa Peri vista de baixo do pergolado",
       },
     ],
@@ -52,7 +52,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#a94e28",
+  // O vinho do selo da casa: é a cor que a barra do navegador no celular
+  // assume, e combinar com a logo faz o site parecer da mesma marca.
+  themeColor: "#6d1f1a",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -54,7 +54,7 @@ export default function ACasa() {
               className="rounded-2xl border border-borda bg-creme-fundo p-6"
             >
               <h3 className="font-display text-2xl">{suite.nome}</h3>
-              <p className="mt-1 text-sm text-terracota">
+              <p className="mt-1 text-sm text-vinho">
                 até {suite.capacidade} pessoas
               </p>
               <p className="mt-3 leading-relaxed text-tinta-suave">
@@ -134,7 +134,7 @@ export default function ACasa() {
         <div className="mt-9 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {COMODIDADES.map((grupo) => (
             <div key={grupo.titulo}>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-terracota">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-vinho">
                 {grupo.titulo}
               </h3>
               <ul className="mt-4 space-y-2 text-tinta-suave">

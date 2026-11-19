@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { CASA } from "@/modules/conteudo";
@@ -16,8 +17,23 @@ export function Cabecalho() {
   return (
     <header className="sticky top-0 z-50 border-b border-borda/70 bg-creme/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-        <Link href="/" className="shrink-0">
-          <span className="font-display text-xl text-tinta sm:text-2xl">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+          {/*
+            O selo inteiro num cabeçalho de 56px deixaria o "VILLA PERI"
+            ilegível. Então entra o motivo da logo — as buganvílias sobre o
+            telhado — ao lado do nome em tipo de display, que é o que de fato
+            se lê nesse tamanho. O selo completo aparece no rodapé, onde há
+            espaço para ele ser lido.
+          */}
+          <Image
+            src="/marca/villa-peri-selo.png"
+            alt=""
+            width={44}
+            height={44}
+            priority
+            className="h-10 w-10 rounded-full sm:h-11 sm:w-11"
+          />
+          <span className="font-display text-xl text-vinho sm:text-2xl">
             {CASA.nome}
           </span>
           <span className="sr-only">— página inicial</span>
@@ -41,7 +57,7 @@ export function Cabecalho() {
             <Link
               key={l.href}
               href={l.href}
-              className="shrink-0 py-1 transition-colors hover:text-terracota"
+              className="shrink-0 py-1 transition-colors hover:text-vinho"
             >
               {l.texto}
             </Link>

@@ -39,7 +39,7 @@ export default function Galeria() {
           <a
             key={c.id}
             href={`#${c.id}`}
-            className="rounded-full border border-borda bg-creme-fundo px-4 py-2 text-sm text-tinta-suave transition-colors hover:border-terracota hover:text-terracota"
+            className="rounded-full border border-borda bg-creme-fundo px-4 py-2 text-sm text-tinta-suave transition-colors hover:border-vinho hover:text-vinho"
           >
             {c.titulo}
           </a>

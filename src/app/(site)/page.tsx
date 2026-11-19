@@ -45,7 +45,14 @@ export default function Inicio() {
         />
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-tinta/60 via-tinta/45 to-tinta/80" />
 
-        <div className="mx-auto w-full max-w-6xl px-4 pt-28 pb-14 sm:px-6 sm:pt-44 sm:pb-20 lg:pt-56">
+        {/*
+          Espaçamento contido de propósito. As fotos vêm de capturas de tela e
+          têm só ~1170px de largura: um hero alto obrigava o navegador a
+          ampliá-las uns 75%, o que borrava a imagem e aumentava os defeitos do
+          original. Com a seção mais baixa, a foto é exibida quase no tamanho
+          nativo e fica nítida.
+        */}
+        <div className="mx-auto w-full max-w-6xl px-4 pt-24 pb-12 sm:px-6 sm:pt-32 sm:pb-14 lg:pt-36">
           <p className="text-xs uppercase tracking-[0.2em] text-creme/80 sm:text-sm">
             {/* O bairro sai no celular: com ele a linha quebra e deixa o "GO"
                 sozinho embaixo. */}
@@ -80,7 +87,7 @@ export default function Inicio() {
             <div key={n.rotulo}>
               <dt className="sr-only">{n.rotulo}</dt>
               <dd>
-                <span className="font-display text-3xl text-terracota">
+                <span className="font-display text-3xl text-vinho">
                   {n.valor}
                 </span>
                 <span className="ml-2 text-sm text-tinta-suave">{n.rotulo}</span>
@@ -104,7 +111,7 @@ export default function Inicio() {
             </div>
             <Link
               href="/a-casa"
-              className="mt-7 inline-block font-medium text-terracota underline underline-offset-4 hover:text-terracota-escuro"
+              className="mt-7 inline-block font-medium text-vinho underline underline-offset-4 hover:text-vinho-escuro"
             >
               Conhecer as três suítes
             </Link>
@@ -157,7 +164,7 @@ export default function Inicio() {
 
           <Link
             href="/galeria"
-            className="mt-8 inline-block font-medium text-terracota underline underline-offset-4 hover:text-terracota-escuro"
+            className="mt-8 inline-block font-medium text-vinho underline underline-offset-4 hover:text-vinho-escuro"
           >
             Ver as 42 fotos
           </Link>
@@ -170,7 +177,7 @@ export default function Inicio() {
         <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {COMODIDADES.map((grupo) => (
             <div key={grupo.titulo}>
-              <h3 className="text-base font-semibold tracking-wide text-terracota uppercase">
+              <h3 className="text-base font-semibold tracking-wide text-vinho uppercase">
                 {grupo.titulo}
               </h3>
               <ul className="mt-4 space-y-2 text-tinta-suave">
@@ -183,7 +190,7 @@ export default function Inicio() {
         </div>
         <Link
           href="/a-casa"
-          className="mt-8 inline-block font-medium text-terracota underline underline-offset-4 hover:text-terracota-escuro"
+          className="mt-8 inline-block font-medium text-vinho underline underline-offset-4 hover:text-vinho-escuro"
         >
           Ver a lista completa
         </Link>

@@ -57,7 +57,7 @@ export default function Politicas() {
           {REGRAS_DA_CASA.map((regra) => (
             <li
               key={regra}
-              className="border-l-2 border-terracota/40 pl-4 leading-relaxed text-tinta-suave"
+              className="border-l-2 border-vinho/40 pl-4 leading-relaxed text-tinta-suave"
             >
               {regra}
             </li>

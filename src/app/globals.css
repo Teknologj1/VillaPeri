@@ -7,12 +7,18 @@
  * parece impressa.
  */
 @theme {
+  /*
+   * Cores amostradas da própria logo da casa, não escolhidas de fora: o vinho
+   * é o do selo e da tipografia, o dourado é o dos arabescos, e o creme do
+   * site já era praticamente o mesmo creme do fundo da logo (#FDF7EE).
+   */
   --color-creme: #faf6f0;
   --color-creme-fundo: #f3ece2;
   --color-tinta: #2b2520;
   --color-tinta-suave: #6d6256;
-  --color-terracota: #a94e28;
-  --color-terracota-escuro: #8a3f20;
+  --color-vinho: #6d1f1a;
+  --color-vinho-escuro: #4e1612;
+  --color-dourado: #c2a06a;
   --color-mata: #3c5742;
   --color-borda: #e2d8ca;
 
@@ -47,7 +53,7 @@
   /* Foco visível em tudo que recebe teclado. O padrão do navegador some em
      fundo claro com elementos arredondados. */
   :focus-visible {
-    outline: 2px solid var(--color-terracota);
+    outline: 2px solid var(--color-vinho);
     outline-offset: 3px;
     border-radius: 2px;
   }

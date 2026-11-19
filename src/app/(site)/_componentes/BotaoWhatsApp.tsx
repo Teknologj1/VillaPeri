@@ -29,7 +29,7 @@ export function BotaoWhatsApp({
     "inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-base font-medium transition-colors";
   const estilo =
     variante === "primario"
-      ? "bg-terracota text-creme hover:bg-terracota-escuro"
+      ? "bg-vinho text-creme hover:bg-vinho-escuro"
       : "border border-borda bg-creme text-tinta hover:bg-creme-fundo";
 
   return (

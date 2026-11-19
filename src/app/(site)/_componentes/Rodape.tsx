@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { CASA } from "@/modules/conteudo";
@@ -18,8 +19,16 @@ export function Rodape() {
     <footer className="mt-24 border-t border-borda bg-creme-fundo">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-3">
         <div>
-          <p className="font-display text-xl text-tinta">{CASA.nome}</p>
-          <p className="mt-2 text-sm leading-relaxed text-tinta-suave">
+          {/* Aqui o selo completo cabe e se lê: é o lugar certo para a marca
+              aparecer inteira, com o "Pousada" e os arabescos. */}
+          <Image
+            src="/marca/villa-peri.png"
+            alt={`Logotipo da Pousada ${CASA.nome}`}
+            width={380}
+            height={305}
+            className="h-auto w-56"
+          />
+          <p className="mt-4 text-sm leading-relaxed text-tinta-suave">
             {CASA.bairro}
             <br />
             {CASA.cidade} — {CASA.uf}
@@ -29,11 +38,11 @@ export function Rodape() {
         <nav aria-label="Rodapé" className="text-sm">
           <p className="font-medium text-tinta">Navegar</p>
           <ul className="mt-3 space-y-2 text-tinta-suave">
-            <li><Link href="/a-casa" className="hover:text-terracota">A casa</Link></li>
-            <li><Link href="/galeria" className="hover:text-terracota">Galeria</Link></li>
-            <li><Link href="/pirenopolis" className="hover:text-terracota">Pirenópolis</Link></li>
-            <li><Link href="/politicas" className="hover:text-terracota">Políticas e regras</Link></li>
-            <li><Link href="/contato" className="hover:text-terracota">Contato</Link></li>
+            <li><Link href="/a-casa" className="hover:text-vinho">A casa</Link></li>
+            <li><Link href="/galeria" className="hover:text-vinho">Galeria</Link></li>
+            <li><Link href="/pirenopolis" className="hover:text-vinho">Pirenópolis</Link></li>
+            <li><Link href="/politicas" className="hover:text-vinho">Políticas e regras</Link></li>
+            <li><Link href="/contato" className="hover:text-vinho">Contato</Link></li>
           </ul>
         </nav>
 
