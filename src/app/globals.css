@@ -1,1 +1,65 @@
 @import "tailwindcss";
+
+/*
+ * Paleta tirada das próprias fotos da casa: cal branco, telha, madeira e
+ * mata. Site de hospedagem vive das imagens, então o fundo é creme quente e
+ * não branco puro — foto sobre branco puro parece recortada, sobre creme
+ * parece impressa.
+ */
+@theme {
+  --color-creme: #faf6f0;
+  --color-creme-fundo: #f3ece2;
+  --color-tinta: #2b2520;
+  --color-tinta-suave: #6d6256;
+  --color-terracota: #a94e28;
+  --color-terracota-escuro: #8a3f20;
+  --color-mata: #3c5742;
+  --color-borda: #e2d8ca;
+
+  --font-display: var(--fonte-display), Georgia, "Times New Roman", serif;
+  --font-sans:
+    var(--fonte-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
+  /* Declarado para os controles do navegador não virem escuros: o site é
+     claro de propósito, porque as fotos pedem fundo claro. */
+  color-scheme: light;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-creme);
+    color: var(--color-tinta);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* Foco visível em tudo que recebe teclado. O padrão do navegador some em
+     fundo claro com elementos arredondados. */
+  :focus-visible {
+    outline: 2px solid var(--color-terracota);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

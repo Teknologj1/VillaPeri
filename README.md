@@ -73,10 +73,39 @@ garantia é a chave.
 - **Reserva, hóspede e lançamento não são apagados**: são arquivados ou
   cancelados.
 
+## Site público
+
+As páginas de vitrine (início, a casa, galeria, Pirenópolis, políticas e
+contato) são estáticas e **não acessam o banco**: publicam na Vercel sem
+`DATABASE_URL` configurada. O conteúdo vive em `src/modules/conteudo/`, com as
+formas desenhadas para bater com as colunas de `tipo_acomodacao` e
+`propriedade` — quando o banco estiver provisionado, a troca é num arquivo só.
+
+A página de cotação com preço e disponibilidade reais entra quando a tabela de
+tarifas estiver preenchida; até lá o site leva a conversa ao WhatsApp.
+
+### Publicar na Vercel
+
+Importe o repositório na Vercel. O preset de Next.js já acerta build e saída;
+não há `vercel.json` porque nada precisa ser sobrescrito.
+
+Duas variáveis de ambiente, as duas opcionais para o build passar:
+
+| Variável | Para quê |
+| --- | --- |
+| `NEXT_PUBLIC_WHATSAPP` | WhatsApp da recepção, formato internacional e só dígitos (55 + DDD + número). Sem ela, os botões levam à página de contato em vez de virar link quebrado. |
+| `NEXT_PUBLIC_URL_SITE` | Endereço final do site, para a prévia com foto ao compartilhar no WhatsApp e no Instagram. |
+
 ## Fotos do site
 
-Veja [`public/fotos/README.md`](public/fotos/README.md) para onde colocar cada
-foto e como nomear os arquivos.
+As fotos publicadas ficam em `public/fotos/`, com nome descritivo, e o catálogo
+com texto alternativo e categoria está em `src/modules/conteudo/fotos.ts`.
+Veja [`public/fotos/README.md`](public/fotos/README.md) para como nomear
+arquivos novos.
+
+`fotos-originais/` guarda as capturas de tela de onde as fotos atuais foram
+extraídas. Fica **fora de `public/`** de propósito: o que está em `public/` é
+publicado como está, e são 80 MB que ninguém precisa baixar.
 
 ## Documentação
 
