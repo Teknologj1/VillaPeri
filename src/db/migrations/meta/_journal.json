@@ -57,6 +57,20 @@
       "when": 1795027947545,
       "tag": "0007_forcar_rls_tarifas",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795262648500,
+      "tag": "0008_colunas_tarifa_e_politica",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795262657064,
+      "tag": "0009_remove_idade_crianca",
+      "breakpoints": true
     }
   ]
 }

@@ -65,6 +65,12 @@ export type EntradaConsulta = {
   /** Hoje no fuso da propriedade, nunca o dia do servidor. */
   hoje: Noite;
   /**
+   * Se a noite de entrada é feriado. Vem calculado de fora, pela tabela de
+   * feriados do módulo Tarifas — é o que faz valer "mínimo de 3 noites em
+   * feriado prolongado".
+   */
+  entradaEhFeriado?: boolean;
+  /**
    * Horas de agora até o horário de check-in da data de entrada; negativo se
    * já passou. Calculado fora do motor, para que ele continue puro e o
    * cálculo de fuso viva num helper só, testado à parte.
@@ -157,6 +163,7 @@ export function consultarDisponibilidade(
       noiteEntrada: pedido.entrada,
       propriedadeId,
       tipoId: tipo.id,
+      ehFeriado: entrada.entradaEhFeriado ?? false,
     });
 
     // --- Regras que não dependem de unidade --------------------------------

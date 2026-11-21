@@ -1,12 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { formatarReais } from "@/lib/dinheiro";
 import {
   CASA,
   COMODIDADES,
   FOTOS_DESTAQUE,
   FOTO_CAPA,
   PIRENOPOLIS,
+  PRECOS,
   caminhoFoto,
 } from "@/modules/conteudo";
 
@@ -64,6 +66,18 @@ export default function Inicio() {
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-creme/90 sm:text-lg">
             {CASA.subtitulo}
+          </p>
+          {/*
+            Só a diária mínima. O total de um grupo grande depende da ocupação
+            base, e número de página pública que não bate com o da conversa
+            vira discussão no check-in.
+          */}
+          <p className="mt-4 text-base text-creme/90">
+            Diárias a partir de{" "}
+            <strong className="font-semibold text-creme">
+              {formatarReais(PRECOS.diariaSemanaCentavos)}
+            </strong>{" "}
+            · mínimo de {PRECOS.minimoNoites} noites
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <BotaoWhatsApp

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 
-import { CASA, REGRAS_DA_CASA } from "@/modules/conteudo";
+import { formatarReais } from "@/lib/dinheiro";
+import { CASA, PRECOS, REGRAS_DA_CASA } from "@/modules/conteudo";
 
 import { BotaoWhatsApp } from "../_componentes/BotaoWhatsApp";
 
 export const metadata: Metadata = {
   title: "Políticas e regras da casa",
   description:
-    "Horários de check-in e check-out, regras da casa e o que está incluído na hospedagem da Villa Peri.",
+    "Horários, mínimo de noites, valores, sinal, cancelamento e regras da casa da Villa Peri, em Pirenópolis.",
   alternates: { canonical: "/politicas" },
 };
 
@@ -18,6 +19,13 @@ const INCLUSO = [
   "Wi-Fi",
   "Estacionamento na garagem, para até 4 carros",
   "Uso da piscina, da churrasqueira e do fogão caipira",
+];
+
+/** Só a diária, sem o adicional por pessoa — veja a nota na seção. */
+const DIARIAS = [
+  { quando: "Meio de semana", valor: PRECOS.diariaSemanaCentavos },
+  { quando: "Fim de semana", valor: PRECOS.diariaFimDeSemanaCentavos },
+  { quando: "Feriados", valor: PRECOS.diariaFeriadoCentavos },
 ];
 
 export default function Politicas() {
@@ -36,7 +44,9 @@ export default function Politicas() {
             <dt className="text-sm uppercase tracking-wide text-tinta-suave">
               Check-in
             </dt>
-            <dd className="mt-1 font-display text-2xl">a partir das {CASA.checkin}</dd>
+            <dd className="mt-1 font-display text-2xl">
+              a partir das {CASA.checkin}
+            </dd>
           </div>
           <div className="rounded-xl border border-borda bg-creme-fundo p-5">
             <dt className="text-sm uppercase tracking-wide text-tinta-suave">
@@ -49,6 +59,73 @@ export default function Politicas() {
           Guardamos a bagagem para quem chega cedo ou sai tarde. O anfitrião
           recebe você na chegada.
         </p>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="font-display text-2xl">Diárias</h2>
+        <dl className="mt-5 divide-y divide-borda overflow-hidden rounded-xl border border-borda">
+          {DIARIAS.map((d) => (
+            <div
+              key={d.quando}
+              className="flex items-baseline justify-between gap-4 bg-creme-fundo px-5 py-4"
+            >
+              <dt className="text-tinta-suave">{d.quando}</dt>
+              <dd className="font-display text-xl text-vinho">
+                {formatarReais(d.valor)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-4 leading-relaxed text-tinta-suave">
+          A diária cobre até {PRECOS.ocupacaoBase} hóspedes. Cada pessoa a mais
+          paga {formatarReais(PRECOS.pessoaAdicionalCentavos)} por noite.
+          Crianças de {PRECOS.idadeMinimaCrianca} a {PRECOS.idadeMaximaCrianca}{" "}
+          anos pagam meia; a partir de {PRECOS.idadeMaximaCrianca + 1} anos,
+          valor integral.
+        </p>
+        <p className="mt-3 text-sm text-tinta-suave">
+          Em datas de alta procura, como réveillon e Carnaval, a diária pode ser
+          diferente. Confirme sempre o valor da sua data com a gente.
+        </p>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="font-display text-2xl">Mínimo de noites</h2>
+        <p className="mt-4 leading-relaxed text-tinta-suave">
+          A estadia mínima é de {PRECOS.minimoNoites} noites. Em feriados
+          prolongados, {PRECOS.minimoNoitesFeriado} noites.
+        </p>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="font-display text-2xl">Sinal e pagamento</h2>
+        <p className="mt-4 leading-relaxed text-tinta-suave">
+          O sinal é de {PRECOS.sinalPercentual}% do total, pago no ato da
+          reserva. O restante é pago no check-in.
+        </p>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="font-display text-2xl">Cancelamento</h2>
+        <p className="mt-4 leading-relaxed text-tinta-suave">
+          Cancelamentos feitos com {PRECOS.diasParaCancelar} dias ou mais de
+          antecedência têm devolução integral do sinal. Abaixo desse prazo o
+          sinal não é devolvido, salvo em caso de força maior.
+        </p>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="font-display text-2xl">Crianças e animais</h2>
+        <ul className="mt-5 space-y-3 text-tinta-suave">
+          <li className="border-l-2 border-vinho/40 pl-4 leading-relaxed">
+            Crianças de {PRECOS.idadeMinimaCrianca} a {PRECOS.idadeMaximaCrianca}{" "}
+            anos pagam meia diária por pessoa adicional. A partir de{" "}
+            {PRECOS.idadeMaximaCrianca + 1} anos, valor integral.
+          </li>
+          <li className="border-l-2 border-vinho/40 pl-4 leading-relaxed">
+            Não temos disponibilidade para animais de estimação.
+          </li>
+        </ul>
       </section>
 
       <section className="mt-12">
@@ -78,19 +155,16 @@ export default function Politicas() {
         </ul>
       </section>
 
-      <section className="mt-12">
-        <h2 className="font-display text-2xl">Valores, sinal e cancelamento</h2>
-        <p className="mt-4 leading-relaxed text-tinta-suave">
-          A diária varia conforme o período do ano, o número de hóspedes e os
-          feriados. O valor do sinal e as condições de cancelamento são
-          informados junto com a proposta de reserva.
+      <section className="mt-14 rounded-2xl bg-creme-fundo p-8 text-center">
+        <h2 className="font-display text-2xl">Consulte a sua data</h2>
+        <p className="mx-auto mt-3 max-w-xl text-tinta-suave">
+          Mandamos o valor exato da sua estadia, com o número de hóspedes.
         </p>
         <div className="mt-6">
           <BotaoWhatsApp
-            mensagem={`Olá! Gostaria de saber os valores e as condições de reserva da ${CASA.nome}.`}
-            variante="secundario"
+            mensagem={`Olá! Gostaria de saber o valor da estadia na ${CASA.nome}.`}
           >
-            Consultar valores e condições
+            Falar no WhatsApp
           </BotaoWhatsApp>
         </div>
       </section>

@@ -20,6 +20,7 @@ function regra(p: Partial<RegraEstadia> & { id: string }): RegraEstadia {
     vigenciaInicio: null,
     vigenciaFim: null,
     diasDaSemana: null,
+    somenteEmFeriado: false,
     minimoDiarias: null,
     maximoDiarias: null,
     diasDeEntrada: null,

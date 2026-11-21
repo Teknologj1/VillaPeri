@@ -1,4 +1,4 @@
-import { CASA } from "@/modules/conteudo";
+import { CASA, PRECOS } from "@/modules/conteudo";
 
 import { Cabecalho } from "./_componentes/Cabecalho";
 import { Rodape } from "./_componentes/Rodape";
@@ -24,7 +24,13 @@ function dadosEstruturados() {
       addressCountry: "BR",
     },
     numberOfRooms: CASA.quartos,
-    petsAllowed: false,
+    petsAllowed: PRECOS.aceitaPets,
+    // Faixa de diárias, da mais barata à de feriado. O Google mostra isso no
+    // resultado de busca local.
+    priceRange: `R$ ${PRECOS.diariaSemanaCentavos / 100} - R$ ${PRECOS.diariaFeriadoCentavos / 100}`,
+    currenciesAccepted: "BRL",
+    checkinTime: "14:00",
+    checkoutTime: "12:00",
     amenityFeature: [
       { "@type": "LocationFeatureSpecification", name: "Piscina aquecida", value: true },
       { "@type": "LocationFeatureSpecification", name: "Wi-Fi", value: true },

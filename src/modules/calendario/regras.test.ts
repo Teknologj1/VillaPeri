@@ -15,6 +15,7 @@ function regra(parcial: Partial<RegraEstadia> & { id: string }): RegraEstadia {
     vigenciaInicio: null,
     vigenciaFim: null,
     diasDaSemana: null,
+    somenteEmFeriado: false,
     minimoDiarias: null,
     maximoDiarias: null,
     diasDeEntrada: null,
@@ -234,6 +235,57 @@ describe("desempate", () => {
       ctx,
     );
     expect(r.minimoDiarias).toBe(2);
+  });
+});
+
+describe("regra só de feriado", () => {
+  // O caso real da Villa Peri: mínimo de 2 noites, mas 3 em feriado.
+  const regras = [
+    regra({ id: "geral", nome: "Mínimo geral", propriedadeId: PROPRIEDADE, minimoDiarias: 2 }),
+    regra({
+      id: "feriado",
+      nome: "Feriado prolongado",
+      propriedadeId: PROPRIEDADE,
+      somenteEmFeriado: true,
+      minimoDiarias: 3,
+    }),
+  ];
+
+  it("não se aplica em noite comum", () => {
+    const r = resolverRegras(regras, { ...ctx, ehFeriado: false });
+    expect(r.minimoDiarias).toBe(2);
+    expect(r.procedencia.minimoDiarias).toEqual({
+      regraId: "geral",
+      regraNome: "Mínimo geral",
+    });
+  });
+
+  it("vence a regra geral quando a entrada cai em feriado", () => {
+    const r = resolverRegras(regras, { ...ctx, ehFeriado: true });
+    expect(r.minimoDiarias).toBe(3);
+    expect(r.procedencia.minimoDiarias).toEqual({
+      regraId: "feriado",
+      regraNome: "Feriado prolongado",
+    });
+  });
+
+  it("sem o sinalizador de feriado no contexto, assume que não é", () => {
+    // Um chamador que esqueça de informar não deve ganhar a regra de feriado
+    // por acidente: o padrão é a regra comum, que é a mais permissiva.
+    const r = resolverRegras(regras, ctx);
+    expect(r.minimoDiarias).toBe(2);
+  });
+
+  it("só sobrepõe os campos que ela define", () => {
+    const r = resolverRegras(
+      [
+        regra({ id: "geral", propriedadeId: PROPRIEDADE, minimoDiarias: 2, janelaMaximaDias: 300 }),
+        regra({ id: "fer", propriedadeId: PROPRIEDADE, somenteEmFeriado: true, minimoDiarias: 3 }),
+      ],
+      { ...ctx, ehFeriado: true },
+    );
+    expect(r.minimoDiarias).toBe(3);
+    expect(r.janelaMaximaDias).toBe(300);
   });
 });
 

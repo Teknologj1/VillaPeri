@@ -190,6 +190,15 @@ export const regraEstadia = pgTable(
      */
     diasDaSemana: jsonb("dias_da_semana").$type<number[] | null>(),
 
+    /**
+     * Restringe a regra às noites de entrada que caem em feriado.
+     *
+     * É o que permite "mínimo de 2 noites, mas 3 em feriado prolongado" sem
+     * cadastrar à mão cada feriado de cada ano — a tabela de feriados já sabe
+     * quais são, inclusive os móveis.
+     */
+    somenteEmFeriado: boolean("somente_em_feriado").notNull().default(false),
+
     /** Menor número de noites aceito. Vale pela regra da noite de entrada. */
     minimoDiarias: integer("minimo_diarias"),
     maximoDiarias: integer("maximo_diarias"),

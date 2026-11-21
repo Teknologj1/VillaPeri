@@ -14,8 +14,20 @@ import {
   unidade,
 } from "@/modules/anfitriao/schema";
 
+import { regraEstadia } from "@/modules/calendario/schema";
+import {
+  CASA,
+  COMODIDADES as GRUPOS_COMODIDADES,
+  PRECOS,
+  REGRAS_DA_CASA,
+  SUITES,
+} from "@/modules/conteudo";
 import { feriadosNoPeriodo } from "@/modules/tarifas/feriados";
-import { feriado } from "@/modules/tarifas/schema";
+import {
+  feriado,
+  politicaCancelamento,
+  regraTarifa,
+} from "@/modules/tarifas/schema";
 
 import * as schema from "./schema";
 
@@ -188,91 +200,44 @@ const MATRIZ: Record<
  *
  * A diferença não é cosmética: com três unidades, o sistema aceitaria três
  * reservas simultâneas para a mesma casa.
+ *
+ * Os dados da casa vêm do módulo Conteúdo, que é a fonte única: o site e o
+ * banco liam cópias separadas das mesmas listas, e duas cópias divergem.
  */
-const SUITES = [
-  {
-    nome: "Suíte 01",
-    descricao:
-      "Quarto térreo com cama de casal e cama de solteiro, banheiro privativo, frigobar e ventilador de teto. Pode ser usada conjugada com a Suíte 02.",
-    capacidade: 3,
-    camasCasal: 1,
-    camasSolteiro: 1,
-  },
-  {
-    nome: "Suíte 02",
-    descricao:
-      "Quarto térreo com cama de casal e cama de solteiro, banheiro privativo, TV, ar-condicionado e ventilador de teto. Pode ser usada conjugada com a Suíte 01.",
-    capacidade: 3,
-    camasCasal: 1,
-    camasSolteiro: 1,
-  },
-  {
-    nome: "Suíte 03",
-    descricao:
-      "Chalé de dois andares com duas camas de casal, banheiro privativo, TV, ventilador de teto e frigobar.",
-    capacidade: 4,
-    camasCasal: 2,
-    camasSolteiro: 0,
-  },
-] as const;
 
-const COMODIDADES = [
-  "Piscina privativa com aquecimento solar",
-  "Quintal privado totalmente cercado",
-  "Churrasqueira com pia e bancada",
-  "Fogão caipira a lenha",
-  "Área de jantar ao ar livre",
-  "Varandas com redes",
-  "Espreguiçadeiras e guarda-sol",
-  "Cozinha completa equipada",
-  "Geladeira e frigobar",
-  "Cooktop e forno elétrico",
-  "Airfryer, grill e sanduicheira",
-  "Cafeteira com coador",
-  "Liquidificador e espremedor de laranja",
-  "Panela elétrica de arroz e chaleira elétrica",
-  "Pratos, talheres e taças de vinho",
-  "Cooler térmico para uso dos hóspedes",
-  "Mesa de jantar",
-  "Wi-Fi e conexão Ethernet",
-  "TV de 32 polegadas",
-  "Ar-condicionado split",
-  "Ventilador de teto",
-  "Lareira interna",
-  "Máquina de lavar",
-  "Ferro de passar e varal",
-  "Roupas de cama e banho fornecidas",
-  "Água quente e chuveiro externo",
-  "Extintor de incêndio",
-  "Garagem para 4 carros, sombreada",
-  "Estacionamento gratuito na rua",
-  "Portão automático e casa murada",
-  "Entrada independente para cada suíte",
-  "Guarda-volumes para chegada cedo ou saída tarde",
-];
+/** O banco guarda uma lista só; o site agrupa por seção. */
+const COMODIDADES = GRUPOS_COMODIDADES.flatMap((g) => g.itens);
+
+const DESCRICAO = CASA.descricao.join("\n\n");
+
+const TARIFA = {
+  semanaCentavos: PRECOS.diariaSemanaCentavos,
+  fimDeSemanaCentavos: PRECOS.diariaFimDeSemanaCentavos,
+  feriadoCentavos: PRECOS.diariaFeriadoCentavos,
+  pessoaExtraCentavos: PRECOS.pessoaAdicionalCentavos,
+  /** Criança de 5 a 9 anos paga meia; de 10 em diante, valor de adulto. */
+  criancaCentavos: Math.round(PRECOS.pessoaAdicionalCentavos / 2),
+  sinalPontosBase: PRECOS.sinalPercentual * 100,
+} as const;
+
+const OCUPACAO_BASE = PRECOS.ocupacaoBase;
+
+const ESTADIA = {
+  minimoNoites: PRECOS.minimoNoites,
+  minimoNoitesFeriado: PRECOS.minimoNoitesFeriado,
+  checkin: "14:00",
+  checkout: "12:00",
+} as const;
 
 /**
- * Regras da casa, do anúncio. Ficam no banco, e não só no texto do anúncio,
- * porque a RIIA responde por elas no WhatsApp: se morarem só num canal, a
- * secretária de IA erra quando perguntarem sobre festa, barulho ou som.
+ * "Devolução no mínimo uma semana antes, salvo caso de força maior."
+ *
+ * Uma faixa só: com 7 dias ou mais devolve tudo; abaixo disso, nada. Força
+ * maior não vira faixa porque não é prazo — é exceção que alguém decide, e
+ * entra como devolução manual registrada na reserva.
  */
-const REGRAS_DA_CASA = [
-  "Não é permitido festa ou churrasco com pessoas além das contratadas na hospedagem.",
-  "Não é permitido barulho depois das 22 horas.",
-  "Durante o dia, pedimos bom senso com o volume: evite música alta.",
-  "Som automotivo é proibido.",
-  "Recebemos a visita de animais silvestres, principalmente micos. Pedimos que não sejam alimentados.",
-];
 
-const DESCRICAO = `Casa de temporada no Jardim Santa Bárbara, a 6 minutos de carro do Centro Histórico de Pirenópolis e vizinha a uma reserva ambiental.
-
-Locada inteira e exclusiva para uma única reserva.
-
-Fácil acesso às atrações históricas e gastronômicas da cidade e região, assim como às cachoeiras, parques de ecoturismo e turismo de aventura.
-
-Três suítes com entrada independente, cozinha completa, piscina com aquecimento solar, área de churrasco com fogão caipira, varandas com redes, portão automático e garagem privativa.
-
-A Villa é bem arborizada, o que deixa o ambiente mais fresco. Recebemos com frequência a visita de animais silvestres, principalmente micos — pedimos que não sejam alimentados.`;
+const FAIXAS_CANCELAMENTO = [{ diasAntes: 7, percentualPontosBase: 10_000 }];
 
 // ---------------------------------------------------------------------------
 
@@ -383,13 +348,35 @@ async function semear() {
         // alugada inteira. O valor por pessoa adicional entra com a tabela de
         // tarifas.
         modoPreco: "ocupacao",
-        ocupacaoBase: 4,
+        ocupacaoBase: OCUPACAO_BASE,
         comodidades: COMODIDADES,
         fotos: [],
       })
       .returning();
   }
   if (!tipo) throw new Error("Não foi possível criar o tipo de acomodação.");
+
+  // Reaplica a configuração a cada execução. Sem isto o seed é insert-only:
+  // mudar uma constante aqui não chega ao banco porque a linha já existe, e o
+  // valor antigo segue valendo sem ninguém perceber — foi o que aconteceu com
+  // a ocupação base.
+  [tipo] = await db
+    .update(tipoAcomodacao)
+    .set({
+      descricao: DESCRICAO,
+      capacidade: 11,
+      quartos: SUITES.length,
+      camas,
+      banheiros: 3,
+      modoPreco: "ocupacao",
+      ocupacaoBase: OCUPACAO_BASE,
+      idadeMinimaCrianca: 5,
+      idadeMaximaCrianca: 9,
+      comodidades: COMODIDADES,
+    })
+    .where(eq(tipoAcomodacao.id, tipo.id))
+    .returning();
+  if (!tipo) throw new Error("Falha ao atualizar o tipo de acomodação.");
 
   const unidades = await db
     .select()
@@ -421,6 +408,96 @@ async function semear() {
     )
     .onConflictDoNothing()
     .returning({ id: feriado.id });
+
+  console.log("Semeando tarifas, regras de estadia e cancelamento…");
+
+  // Horários, sinal e pets ficam na propriedade; idempotente de propósito,
+  // para o seed poder rodar de novo depois de o proprietário mudar um valor.
+  await db
+    .update(propriedade)
+    .set({
+      checkinPadrao: ESTADIA.checkin,
+      checkoutPadrao: ESTADIA.checkout,
+      sinalPontosBase: TARIFA.sinalPontosBase,
+      aceitaPets: false,
+    })
+    .where(eq(propriedade.id, prop.id));
+
+  const tarifas = [
+    {
+      nome: "Diária padrão",
+      nivel: "padrao" as const,
+      precoSemanaCentavos: TARIFA.semanaCentavos,
+      precoFimDeSemanaCentavos: TARIFA.fimDeSemanaCentavos,
+      valorPessoaExtraCentavos: TARIFA.pessoaExtraCentavos,
+      valorCriancaCentavos: TARIFA.criancaCentavos,
+    },
+    {
+      // Vale em qualquer noite que a tabela de feriados marcar, inclusive os
+      // móveis. Preço fixo, não ajuste percentual, porque foi assim que o
+      // proprietário informou.
+      nome: "Feriado",
+      nivel: "feriado" as const,
+      precoFixoCentavos: TARIFA.feriadoCentavos,
+      valorPessoaExtraCentavos: TARIFA.pessoaExtraCentavos,
+      valorCriancaCentavos: TARIFA.criancaCentavos,
+    },
+  ];
+
+  for (const t of tarifas) {
+    const existente = await db
+      .select()
+      .from(regraTarifa)
+      .where(eq(regraTarifa.nome, t.nome))
+      .limit(1);
+    if (existente.length === 0) {
+      await db
+        .insert(regraTarifa)
+        .values({ anfitriaoId: villaPeri.id, propriedadeId: prop.id, ...t });
+    }
+  }
+
+  const regrasEstadia = [
+    {
+      nome: "Mínimo de noites",
+      minimoDiarias: ESTADIA.minimoNoites,
+      somenteEmFeriado: false,
+      prioridade: 0,
+    },
+    {
+      nome: "Feriado prolongado",
+      minimoDiarias: ESTADIA.minimoNoitesFeriado,
+      somenteEmFeriado: true,
+      prioridade: 10,
+    },
+  ];
+
+  for (const r of regrasEstadia) {
+    const existente = await db
+      .select()
+      .from(regraEstadia)
+      .where(eq(regraEstadia.nome, r.nome))
+      .limit(1);
+    if (existente.length === 0) {
+      await db
+        .insert(regraEstadia)
+        .values({ anfitriaoId: villaPeri.id, propriedadeId: prop.id, ...r });
+    }
+  }
+
+  const politicas = await db
+    .select()
+    .from(politicaCancelamento)
+    .where(eq(politicaCancelamento.nome, "Padrão"))
+    .limit(1);
+  if (politicas.length === 0) {
+    await db.insert(politicaCancelamento).values({
+      anfitriaoId: villaPeri.id,
+      nome: "Padrão",
+      faixas: FAIXAS_CANCELAMENTO,
+      padrao: true,
+    });
+  }
 
   console.log("Semeando os cinco perfis e a matriz de permissões…");
   for (const [nome, cfg] of Object.entries(MATRIZ)) {
@@ -483,9 +560,32 @@ async function semear() {
   }
 
   console.log(
-    `\n  Faltam, para o site e as reservas: tabela de tarifas, horários de\n` +
-      `  check-in e check-out, política de cancelamento, sinal, e política de\n` +
-      `  crianças e pets.`,
+    `  tarifa       semana R$ ${(TARIFA.semanaCentavos / 100).toFixed(2)} · ` +
+      `fim de semana R$ ${(TARIFA.fimDeSemanaCentavos / 100).toFixed(2)} · ` +
+      `feriado R$ ${(TARIFA.feriadoCentavos / 100).toFixed(2)}`,
+  );
+  console.log(
+    `  por pessoa   R$ ${(TARIFA.pessoaExtraCentavos / 100).toFixed(2)} além da ocupação base ` +
+      `(${tipo.ocupacaoBase}); criança de ${tipo.idadeMinimaCrianca} a ${tipo.idadeMaximaCrianca} anos paga meia`,
+  );
+  console.log(
+    `  estadia      mínimo ${ESTADIA.minimoNoites} noites, ${ESTADIA.minimoNoitesFeriado} em feriado · ` +
+      `check-in ${ESTADIA.checkin}, check-out ${ESTADIA.checkout} · sinal ${TARIFA.sinalPontosBase / 100}%`,
+  );
+
+  console.log(
+    `\n  A CONFIRMAR: a ocupação base está em ${tipo.ocupacaoBase} pessoas — ou seja, a diária\n` +
+      `  cobre ${tipo.ocupacaoBase} hóspedes e cada pessoa além disso paga R$ ${(TARIFA.pessoaExtraCentavos / 100).toFixed(2)}.\n` +
+      `  O proprietário informou o valor por pessoa adicional, mas não a partir\n` +
+      `  de quantas. Com a casa cheia (11), isso dá R$ ${(
+        (TARIFA.semanaCentavos + (11 - tipo.ocupacaoBase) * TARIFA.pessoaExtraCentavos) /
+        100
+      ).toFixed(2)} em dia de semana.`,
+  );
+  console.log(
+    `  A CONFIRMAR: feriado foi informado como "R$ 1.375 a R$ 1.500". Está\n` +
+      `  cadastrado R$ 1.375; datas de pico (réveillon, carnaval) podem receber\n` +
+      `  uma regra de "data especial" com o valor maior.`,
   );
 }
 

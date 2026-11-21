@@ -13,6 +13,7 @@ export type RegraEstadia = {
   vigenciaInicio: Noite | null;
   vigenciaFim: Noite | null;
   diasDaSemana: number[] | null;
+  somenteEmFeriado: boolean;
   minimoDiarias: number | null;
   maximoDiarias: number | null;
   diasDeEntrada: number[] | null;
@@ -68,6 +69,12 @@ export type Contexto = {
   propriedadeId: string;
   tipoId: string;
   unidadeId?: string;
+  /**
+   * Se a noite de entrada cai em feriado. Vem de fora porque a tabela de
+   * feriados pertence ao módulo Tarifas: o motor continua puro e a dependência
+   * entre módulos fica no serviço, que é quem pode atravessar a fronteira.
+   */
+  ehFeriado?: boolean;
 };
 
 /** unidade > tipo > propriedade. */
@@ -83,10 +90,11 @@ function cobreEscopo(r: RegraEstadia, ctx: Contexto): boolean {
   return r.propriedadeId === ctx.propriedadeId;
 }
 
-function cobreData(r: RegraEstadia, noite: Noite): boolean {
+function cobreData(r: RegraEstadia, noite: Noite, ehFeriado: boolean): boolean {
   if (r.vigenciaInicio && noite < r.vigenciaInicio) return false;
   if (r.vigenciaFim && noite > r.vigenciaFim) return false;
   if (r.diasDaSemana && !r.diasDaSemana.includes(diaDaSemana(noite))) return false;
+  if (r.somenteEmFeriado && !ehFeriado) return false;
   return true;
 }
 
@@ -101,9 +109,18 @@ export function regrasAplicaveis(
   regras: RegraEstadia[],
   ctx: Contexto,
 ): RegraEstadia[] {
+  const ehFeriado = ctx.ehFeriado ?? false;
   return regras
-    .filter((r) => r.ativa && cobreEscopo(r, ctx) && cobreData(r, ctx.noiteEntrada))
+    .filter(
+      (r) =>
+        r.ativa && cobreEscopo(r, ctx) && cobreData(r, ctx.noiteEntrada, ehFeriado),
+    )
     .sort((a, b) => {
+      // Regra de feriado vence a regra geral de mesmo escopo: é mais
+      // específica, mesmo sem prioridade declarada.
+      if (a.somenteEmFeriado !== b.somenteEmFeriado) {
+        return a.somenteEmFeriado ? -1 : 1;
+      }
       const esp = especificidade(b) - especificidade(a);
       if (esp !== 0) return esp;
       const pri = b.prioridade - a.prioridade;

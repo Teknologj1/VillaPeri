@@ -23,19 +23,49 @@ export const CASA = {
   camas: 6,
   banheiros: 3,
 
-  /**
-   * ATENÇÃO: horários provisórios, no padrão do setor (14h / 12h). O
-   * proprietário ainda não confirmou os da Villa Peri — é a decisão 4 da
-   * especificação. Confirme antes de divulgar o site.
-   */
   checkin: "14h",
   checkout: "12h",
 
   descricao: [
     "Casa de temporada no Jardim Santa Bárbara, vizinha a uma reserva ambiental e a seis minutos de carro do Centro Histórico de Pirenópolis.",
+    "Locada inteira e exclusiva para uma única reserva.",
     "Fácil acesso às atrações históricas e gastronômicas da cidade e da região, assim como às cachoeiras, aos parques de ecoturismo e ao turismo de aventura.",
+    "Três suítes com entrada independente, cozinha completa, piscina com aquecimento solar, área de churrasco com fogão caipira, varandas com redes, portão automático e garagem privativa.",
     "A Villa é bem arborizada, o que deixa o ambiente mais fresco. Recebemos com frequência a visita de animais silvestres, principalmente micos — pedimos que não sejam alimentados.",
   ],
+} as const;
+
+/**
+ * Tarifas e condições, como informadas pelo proprietário.
+ *
+ * Dinheiro em centavos, pela mesma razão do resto do sistema. Este objeto é a
+ * fonte única: o seed do banco (`src/db/seed.ts`) importa daqui, para o site e
+ * o motor de preços não poderem divergir.
+ *
+ * O site publica só a diária MÍNIMA ("a partir de"). O total de um grupo
+ * grande depende de `ocupacaoBase`, que ainda não foi confirmada, e preço
+ * errado em página pública vira discussão no check-in.
+ */
+export const PRECOS = {
+  diariaSemanaCentavos: 54_300,
+  diariaFimDeSemanaCentavos: 75_000,
+  diariaFeriadoCentavos: 137_500,
+
+  pessoaAdicionalCentavos: 11_000,
+  /** A CONFIRMAR: quantas pessoas a diária já cobre. */
+  ocupacaoBase: 4,
+
+  /** Faixa que paga meia. Abaixo de `idadeMinimaCrianca`, não se cobra. */
+  idadeMinimaCrianca: 5,
+  idadeMaximaCrianca: 9,
+
+  sinalPercentual: 30,
+  minimoNoites: 2,
+  minimoNoitesFeriado: 3,
+  /** Prazo para cancelar com devolução integral. */
+  diasParaCancelar: 7,
+
+  aceitaPets: false,
 } as const;
 
 export type Suite = {
@@ -43,6 +73,9 @@ export type Suite = {
   capacidade: number;
   descricao: string;
   destaques: string[];
+  /** Usado pelo seed para calcular o total de camas e o kit de enxoval. */
+  camasCasal: number;
+  camasSolteiro: number;
 };
 
 export const SUITES: Suite[] = [
@@ -52,6 +85,8 @@ export const SUITES: Suite[] = [
     descricao:
       "Quarto térreo com cama de casal e cama de solteiro, banheiro privativo e entrada independente. Pode ser usada conjugada com a Suíte 02.",
     destaques: ["Cama de casal", "Cama de solteiro", "Banheiro privativo", "Frigobar", "Ventilador de teto"],
+    camasCasal: 1,
+    camasSolteiro: 1,
   },
   {
     nome: "Suíte 02",
@@ -59,6 +94,8 @@ export const SUITES: Suite[] = [
     descricao:
       "Quarto térreo com cama de casal e cama de solteiro, banheiro privativo e entrada independente. Pode ser usada conjugada com a Suíte 01.",
     destaques: ["Cama de casal", "Cama de solteiro", "Banheiro privativo", "Ar-condicionado", "TV", "Ventilador de teto"],
+    camasCasal: 1,
+    camasSolteiro: 1,
   },
   {
     nome: "Suíte 03",
@@ -66,6 +103,8 @@ export const SUITES: Suite[] = [
     descricao:
       "Chalé de dois andares com duas camas de casal e banheiro privativo, em pé-direito alto e escada de madeira.",
     destaques: ["Duas camas de casal", "Dois andares", "Banheiro privativo", "TV", "Frigobar", "Ventilador de teto"],
+    camasCasal: 2,
+    camasSolteiro: 0,
   },
 ];
 

@@ -1,0 +1,1 @@
+ALTER TABLE "tipo_acomodacao" DROP COLUMN "idade_crianca";

@@ -195,6 +195,12 @@ export const propriedade = pgTable(
      * errado quando o hóspede perguntar sobre festa, barulho ou som.
      */
     regrasDaCasa: jsonb("regras_da_casa").$type<string[]>().notNull().default([]),
+
+    /** Sinal cobrado no ato da reserva, em pontos-base. 3000 = 30%. */
+    sinalPontosBase: integer("sinal_pontos_base").notNull().default(3000),
+
+    /** Se a propriedade aceita animais de estimação. */
+    aceitaPets: boolean("aceita_pets").notNull().default(false),
   },
   (t) => [
     index("propriedade_anfitriao_idx").on(t.anfitriaoId),
@@ -231,8 +237,13 @@ export const tipoAcomodacao = pgTable(
     modoPreco: modoPreco("modo_preco").notNull().default("acomodacao"),
     /** Ocupação já inclusa no preço base, quando o modo é por ocupação. */
     ocupacaoBase: integer("ocupacao_base").notNull().default(2),
-    /** Idade até a qual a criança paga menos ou nada. */
-    idadeCrianca: integer("idade_crianca").notNull().default(5),
+    /**
+     * Faixa etária que paga meia. Na Villa Peri: de 5 a 9 anos paga meia, de
+     * 10 em diante paga como adulto. Duas colunas e não uma porque "criança"
+     * tem dois limites, e guardar só um obriga o código a chutar o outro.
+     */
+    idadeMinimaCrianca: integer("idade_minima_crianca").notNull().default(5),
+    idadeMaximaCrianca: integer("idade_maxima_crianca").notNull().default(9),
     comodidades: jsonb("comodidades").$type<string[]>().notNull().default([]),
     /** Caminhos das fotos, na ordem de exibição. */
     fotos: jsonb("fotos").$type<string[]>().notNull().default([]),

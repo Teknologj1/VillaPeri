@@ -14,6 +14,7 @@ import {
   listarTipos,
   listarUnidadesAtivas,
 } from "@/modules/anfitriao";
+import { listarFeriados } from "@/modules/tarifas";
 
 import {
   type Pedido,
@@ -42,10 +43,12 @@ export async function consultarDisponibilidade(
   agora: Date = new Date(),
 ): Promise<ResultadoConsulta> {
   const propriedade = await buscarPropriedade(tx);
-  const [tipos, unidades, regras] = await Promise.all([
+  const [tipos, unidades, regras, feriadosNaEntrada] = await Promise.all([
     listarTipos(tx),
     listarUnidadesAtivas(tx),
     buscarRegrasEstadia(tx),
+    // Só a noite de entrada interessa: é ela que determina a regra de estadia.
+    listarFeriados(tx, pedido.entrada, pedido.entrada),
   ]);
 
   const noites = noitesDaEstadia(pedido.entrada, pedido.saida);
@@ -83,6 +86,7 @@ export async function consultarDisponibilidade(
       vigenciaInicio: r.vigenciaInicio,
       vigenciaFim: r.vigenciaFim,
       diasDaSemana: r.diasDaSemana,
+      somenteEmFeriado: r.somenteEmFeriado,
       minimoDiarias: r.minimoDiarias,
       maximoDiarias: r.maximoDiarias,
       diasDeEntrada: r.diasDeEntrada,
@@ -94,6 +98,7 @@ export async function consultarDisponibilidade(
       ativa: r.ativa,
     })),
     hoje: hojeNaPropriedade(propriedade.fuso, agora),
+    entradaEhFeriado: feriadosNaEntrada.length > 0,
     horasAteCheckin: horasAteCheckin(
       pedido.entrada,
       propriedade.checkinPadrao,
