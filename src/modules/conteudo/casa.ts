@@ -50,9 +50,11 @@ export const PRECOS = {
   diariaSemanaCentavos: 54_300,
   diariaFimDeSemanaCentavos: 75_000,
   diariaFeriadoCentavos: 137_500,
+  /** Réveillon e Carnaval, os dois picos do ano. */
+  diariaEspecialCentavos: 150_000,
 
   pessoaAdicionalCentavos: 11_000,
-  /** A CONFIRMAR: quantas pessoas a diária já cobre. */
+  /** Quantas pessoas a diária já cobre, confirmado pelo proprietário. */
   ocupacaoBase: 4,
 
   /**

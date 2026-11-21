@@ -8,9 +8,11 @@
 export {
   type AmbitoFeriado,
   type FeriadoGerado,
+  type PeriodoEspecial,
   domingoDePascoa,
   feriadosNacionais,
   feriadosNoPeriodo,
+  periodosEspeciais,
 } from "./feriados";
 
 export {

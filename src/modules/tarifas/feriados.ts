@@ -87,6 +87,45 @@ export function feriadosNacionais(ano: number): FeriadoGerado[] {
   );
 }
 
+export type PeriodoEspecial = {
+  nome: string;
+  /** Primeira noite coberta. */
+  inicio: Noite;
+  /** Última noite coberta. */
+  fim: Noite;
+};
+
+/**
+ * Os períodos de pico que têm preço próprio: réveillon e Carnaval.
+ *
+ * São intervalos, não dias soltos — ninguém reserva só a noite de 31. O
+ * réveillon é fixo no calendário; o Carnaval é móvel e sai da Páscoa, como os
+ * feriados, o que evita cadastrar à mão todo ano.
+ *
+ * Os limites são a melhor leitura do que o proprietário chamou de "réveillon e
+ * Carnaval"; se a casa cobra o período maior ou menor, é mudar aqui — as
+ * regras são dado, e a vigência de cada uma é editável no painel.
+ */
+export function periodosEspeciais(ano: number): PeriodoEspecial[] {
+  const pascoa = domingoDePascoa(ano);
+
+  return [
+    {
+      // Da véspera do fim de ano até a virada, atravessando o Ano-Novo.
+      nome: `Réveillon ${ano}/${ano + 1}`,
+      inicio: `${ano}-12-28`,
+      fim: `${ano + 1}-01-02`,
+    },
+    {
+      // Da sexta que abre o feriado à Quarta-feira de Cinzas.
+      // Carnaval (terça) é Páscoa − 47; a sexta anterior, − 51.
+      nome: `Carnaval ${ano}`,
+      inicio: somarDias(pascoa, -51),
+      fim: somarDias(pascoa, -46),
+    },
+  ];
+}
+
 /** Os feriados de um intervalo de anos, para popular a tabela de uma vez. */
 export function feriadosNoPeriodo(
   anoInicial: number,

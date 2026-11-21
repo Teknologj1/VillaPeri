@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { domingoDePascoa, feriadosNacionais, feriadosNoPeriodo } from "./feriados";
+import {
+  domingoDePascoa,
+  feriadosNacionais,
+  feriadosNoPeriodo,
+  periodosEspeciais,
+} from "./feriados";
 
 describe("domingoDePascoa", () => {
   it("bate com as datas conhecidas", () => {
@@ -68,6 +73,44 @@ describe("feriadosNacionais", () => {
       const terca = f.find((x) => x.nome === "Carnaval (terça)")!;
       expect(new Date(`${segunda.data}T00:00:00Z`).getUTCDay()).toBe(1);
       expect(new Date(`${terca.data}T00:00:00Z`).getUTCDay()).toBe(2);
+    }
+  });
+});
+
+describe("periodosEspeciais", () => {
+  it("o Carnaval acompanha a Páscoa e termina na Quarta-feira de Cinzas", () => {
+    // Páscoa 2027 = 28/03. Carnaval (terça) = 09/02; o período vai da sexta
+    // anterior, 05/02, à quarta de cinzas, 10/02.
+    const [, carnaval] = periodosEspeciais(2027);
+    expect(carnaval?.inicio).toBe("2027-02-05");
+    expect(carnaval?.fim).toBe("2027-02-10");
+
+    const inicio = new Date(`${carnaval!.inicio}T00:00:00Z`);
+    const fim = new Date(`${carnaval!.fim}T00:00:00Z`);
+    expect(inicio.getUTCDay()).toBe(5); // sexta
+    expect(fim.getUTCDay()).toBe(3); // quarta
+  });
+
+  it("o Carnaval cai em sexta e quarta em qualquer ano", () => {
+    for (let ano = 2026; ano <= 2040; ano++) {
+      const [, carnaval] = periodosEspeciais(ano);
+      expect(new Date(`${carnaval!.inicio}T00:00:00Z`).getUTCDay()).toBe(5);
+      expect(new Date(`${carnaval!.fim}T00:00:00Z`).getUTCDay()).toBe(3);
+    }
+  });
+
+  it("o réveillon atravessa a virada do ano", () => {
+    const [reveillon] = periodosEspeciais(2026);
+    expect(reveillon?.inicio).toBe("2026-12-28");
+    expect(reveillon?.fim).toBe("2027-01-02");
+    expect(reveillon?.nome).toBe("Réveillon 2026/2027");
+  });
+
+  it("os dois períodos de um ano não se sobrepõem", () => {
+    for (let ano = 2026; ano <= 2035; ano++) {
+      const [reveillon, carnaval] = periodosEspeciais(ano);
+      // O Carnaval é sempre no começo do ano; o réveillon, no fim.
+      expect(carnaval!.fim < reveillon!.inicio).toBe(true);
     }
   });
 });

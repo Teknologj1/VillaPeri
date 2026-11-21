@@ -22,7 +22,7 @@ import {
   REGRAS_DA_CASA,
   SUITES,
 } from "@/modules/conteudo";
-import { feriadosNoPeriodo } from "@/modules/tarifas/feriados";
+import { feriadosNoPeriodo, periodosEspeciais } from "@/modules/tarifas/feriados";
 import {
   feriado,
   politicaCancelamento,
@@ -214,6 +214,7 @@ const TARIFA = {
   semanaCentavos: PRECOS.diariaSemanaCentavos,
   fimDeSemanaCentavos: PRECOS.diariaFimDeSemanaCentavos,
   feriadoCentavos: PRECOS.diariaFeriadoCentavos,
+  especialCentavos: PRECOS.diariaEspecialCentavos,
   pessoaExtraCentavos: PRECOS.pessoaAdicionalCentavos,
   /** Criança de 5 a 9 anos paga meia; de 10 em diante, valor de adulto. */
   criancaCentavos: Math.round(PRECOS.pessoaAdicionalCentavos / 2),
@@ -457,6 +458,35 @@ async function semear() {
     }
   }
 
+  // Réveillon e Carnaval: nível "especial", que vence o de feriado na pilha
+  // de preços. Uma regra por período e por ano, porque a vigência de cada
+  // regra é um intervalo só — e o Carnaval muda de data todo ano.
+  let especiaisNovas = 0;
+  for (let ano = ANO; ano <= ANO + 4; ano++) {
+    for (const periodo of periodosEspeciais(ano)) {
+      const existente = await db
+        .select()
+        .from(regraTarifa)
+        .where(eq(regraTarifa.nome, periodo.nome))
+        .limit(1);
+      if (existente.length > 0) continue;
+
+      await db.insert(regraTarifa).values({
+        anfitriaoId: villaPeri.id,
+        propriedadeId: prop.id,
+        nome: periodo.nome,
+        nivel: "especial",
+        vigenciaInicio: periodo.inicio,
+        vigenciaFim: periodo.fim,
+        precoFixoCentavos: TARIFA.especialCentavos,
+        valorPessoaExtraCentavos: TARIFA.pessoaExtraCentavos,
+        valorCriancaCentavos: TARIFA.criancaCentavos,
+        prioridade: 10,
+      });
+      especiaisNovas++;
+    }
+  }
+
   const regrasEstadia = [
     {
       nome: "Mínimo de noites",
@@ -565,6 +595,10 @@ async function semear() {
       `feriado R$ ${(TARIFA.feriadoCentavos / 100).toFixed(2)}`,
   );
   console.log(
+    `  especiais    R$ ${(TARIFA.especialCentavos / 100).toFixed(2)} em réveillon e Carnaval, ` +
+      `${ANO} a ${ANO + 4} (${especiaisNovas} novas)`,
+  );
+  console.log(
     `  por pessoa   R$ ${(TARIFA.pessoaExtraCentavos / 100).toFixed(2)} além da ocupação base ` +
       `(${tipo.ocupacaoBase}); criança de ${tipo.idadeMinimaCrianca} a ${tipo.idadeMaximaCrianca} anos paga meia`,
   );
@@ -573,20 +607,6 @@ async function semear() {
       `check-in ${ESTADIA.checkin}, check-out ${ESTADIA.checkout} · sinal ${TARIFA.sinalPontosBase / 100}%`,
   );
 
-  console.log(
-    `\n  A CONFIRMAR: a ocupação base está em ${tipo.ocupacaoBase} pessoas — ou seja, a diária\n` +
-      `  cobre ${tipo.ocupacaoBase} hóspedes e cada pessoa além disso paga R$ ${(TARIFA.pessoaExtraCentavos / 100).toFixed(2)}.\n` +
-      `  O proprietário informou o valor por pessoa adicional, mas não a partir\n` +
-      `  de quantas. Com a casa cheia (11), isso dá R$ ${(
-        (TARIFA.semanaCentavos + (11 - tipo.ocupacaoBase) * TARIFA.pessoaExtraCentavos) /
-        100
-      ).toFixed(2)} em dia de semana.`,
-  );
-  console.log(
-    `  A CONFIRMAR: feriado foi informado como "R$ 1.375 a R$ 1.500". Está\n` +
-      `  cadastrado R$ 1.375; datas de pico (réveillon, carnaval) podem receber\n` +
-      `  uma regra de "data especial" com o valor maior.`,
-  );
 }
 
 semear()
