@@ -55,7 +55,10 @@ export const PRECOS = {
   /** A CONFIRMAR: quantas pessoas a diária já cobre. */
   ocupacaoBase: 4,
 
-  /** Faixa que paga meia. Abaixo de `idadeMinimaCrianca`, não se cobra. */
+  /**
+   * Faixa que paga meia. Abaixo de `idadeMinimaCrianca` é cortesia: não paga
+   * e não conta como pessoa adicional. Confirmado pelo proprietário.
+   */
   idadeMinimaCrianca: 5,
   idadeMaximaCrianca: 9,
 

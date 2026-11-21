@@ -79,9 +79,10 @@ export default function Politicas() {
         <p className="mt-4 leading-relaxed text-tinta-suave">
           A diária cobre até {PRECOS.ocupacaoBase} hóspedes. Cada pessoa a mais
           paga {formatarReais(PRECOS.pessoaAdicionalCentavos)} por noite.
-          Crianças de {PRECOS.idadeMinimaCrianca} a {PRECOS.idadeMaximaCrianca}{" "}
-          anos pagam meia; a partir de {PRECOS.idadeMaximaCrianca + 1} anos,
-          valor integral.
+          Crianças de até {PRECOS.idadeMinimaCrianca - 1} anos não pagam; de{" "}
+          {PRECOS.idadeMinimaCrianca} a {PRECOS.idadeMaximaCrianca} anos pagam
+          meia; a partir de {PRECOS.idadeMaximaCrianca + 1} anos, valor
+          integral.
         </p>
         <p className="mt-3 text-sm text-tinta-suave">
           Em datas de alta procura, como réveillon e Carnaval, a diária pode ser
@@ -118,8 +119,12 @@ export default function Politicas() {
         <h2 className="font-display text-2xl">Crianças e animais</h2>
         <ul className="mt-5 space-y-3 text-tinta-suave">
           <li className="border-l-2 border-vinho/40 pl-4 leading-relaxed">
-            Crianças de {PRECOS.idadeMinimaCrianca} a {PRECOS.idadeMaximaCrianca}{" "}
-            anos pagam meia diária por pessoa adicional. A partir de{" "}
+            Crianças de até {PRECOS.idadeMinimaCrianca - 1} anos não pagam e não
+            contam como pessoa adicional.
+          </li>
+          <li className="border-l-2 border-vinho/40 pl-4 leading-relaxed">
+            De {PRECOS.idadeMinimaCrianca} a {PRECOS.idadeMaximaCrianca} anos,
+            meia diária por pessoa adicional. A partir de{" "}
             {PRECOS.idadeMaximaCrianca + 1} anos, valor integral.
           </li>
           <li className="border-l-2 border-vinho/40 pl-4 leading-relaxed">
