@@ -6,11 +6,15 @@
  * por serviços, nunca lendo a tabela do vizinho" como fato e não como intenção.
  */
 export {
+  buscarPerfilComPermissoes,
   buscarPropriedade,
   buscarTipoPorSlug,
   listarTipos,
   listarUnidades,
   listarUnidadesAtivas,
+  type Modulo,
+  type Nivel,
+  type PerfilComPermissoes,
   type Propriedade,
   type TipoAcomodacao,
   type Unidade,

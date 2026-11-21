@@ -33,6 +33,16 @@ const esquema = z.object({
 
   /** Fuso da propriedade. Toda data "de hoje" é resolvida neste fuso. */
   TZ_PROPRIEDADE: z.string().default("America/Sao_Paulo"),
+
+  /**
+   * Segredo que assina sessões e tokens de dois fatores.
+   *
+   * Opcional aqui e exigido em `src/lib/auth.ts`, onde é usado de verdade: o
+   * site público não tem login e precisa publicar sem ele. Exigir no boot
+   * quebraria o build da vitrine por uma variável que ela não usa.
+   */
+  BETTER_AUTH_SECRET: z.string().min(32).optional(),
+  BETTER_AUTH_URL: z.string().min(1).optional(),
 });
 
 const resultado = esquema.safeParse(process.env);

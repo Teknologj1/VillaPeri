@@ -27,3 +27,32 @@ export async function withTenant<T>(
     return fn(tx);
   });
 }
+
+/**
+ * Transação com o contexto do USUÁRIO, e não do anfitrião.
+ *
+ * Existe para um caso só: descobrir, no login, de qual anfitrião a pessoa é.
+ * Essa informação mora em `membro`, que é isolada por anfitrião — o contexto
+ * que ainda não se tem. A política `membro_do_usuario` abre essa porta
+ * estreita, e apenas para leitura das próprias linhas.
+ *
+ * `usuarioId` vem da sessão assinada pelo Better Auth, nunca de algo que o
+ * cliente mande. Depois de resolvido o anfitrião, a requisição segue por
+ * `withTenant`, como todo o resto.
+ */
+export async function comContextoDeUsuario<T>(
+  usuarioId: string,
+  fn: (tx: Tx) => Promise<T>,
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.usuario_id', ${usuarioId}, true)`);
+    return fn(tx);
+  });
+}
+
+/** Define o anfitrião dentro de uma transação já aberta. */
+export async function definirAnfitriao(tx: Tx, anfitriaoId: string): Promise<void> {
+  await tx.execute(
+    sql`select set_config(${PARAMETRO_ANFITRIAO}, ${anfitriaoId}, true)`,
+  );
+}

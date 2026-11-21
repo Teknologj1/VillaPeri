@@ -53,7 +53,15 @@ const eslintConfig = defineConfig([
     // Isso não afrouxa a fronteira: o que ela impede é código de negócio ler a
     // tabela do vizinho em vez de perguntar ao serviço dele. Integridade
     // referencial é do banco, não do módulo.
-    files: ["src/modules/*/schema.ts"],
+    files: ["src/modules/*/schema*.ts"],
+    rules: { "no-restricted-imports": "off" },
+  },
+
+  {
+    // O Better Auth precisa do cliente cru, sem contexto de anfitrião: as
+    // tabelas dele são globais e o login acontece antes de existir anfitrião
+    // para definir. É a única porta legítima — veja a explicação no arquivo.
+    files: ["src/lib/auth.ts"],
     rules: { "no-restricted-imports": "off" },
   },
 

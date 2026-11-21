@@ -37,6 +37,19 @@ const SEM_DONO_POR_DECISAO = new Set([
   "plano",
   // Controle interno do drizzle-kit.
   "__drizzle_migrations",
+
+  // Tabelas do Better Auth. Ficam fora do isolamento porque o login acontece
+  // ANTES de existir contexto de anfitrião: é preciso achar a pessoa pelo
+  // e-mail para só então descobrir de quem ela é. Quem carrega o anfitrião é
+  // `membro`, essa sim isolada.
+  //
+  // O preço disso é que nenhuma rota pode devolver linha destas tabelas sem
+  // antes resolver o membro — por isso `sessaoAtual()` é o único caminho.
+  "user",
+  "session",
+  "account",
+  "verification",
+  "two_factor",
 ]);
 
 type Linha = {

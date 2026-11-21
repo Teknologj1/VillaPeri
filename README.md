@@ -89,12 +89,36 @@ tarifas estiver preenchida; até lá o site leva a conversa ao WhatsApp.
 Importe o repositório na Vercel. O preset de Next.js já acerta build e saída;
 não há `vercel.json` porque nada precisa ser sobrescrito.
 
-Duas variáveis de ambiente, as duas opcionais para o build passar:
+| Variável | Obrigatória | Para quê |
+| --- | --- | --- |
+| `BETTER_AUTH_SECRET` | **sim** | Assina as sessões do painel. Sem ela o build falha, de propósito. Gere com `openssl rand -base64 32`. |
+| `BETTER_AUTH_URL` | sim | Domínio onde a aplicação responde. |
+| `DATABASE_URL` | para o painel | Conexão da aplicação (papel `villaperi_app`, pelo pooler). O site de vitrine não precisa; o painel sim. |
+| `NEXT_PUBLIC_WHATSAPP` | não | WhatsApp da recepção, formato internacional e só dígitos (55 + DDD + número). Sem ela, os botões levam à página de contato em vez de virar link quebrado. |
+| `NEXT_PUBLIC_URL_SITE` | não | Endereço final do site, para a prévia com foto ao compartilhar no WhatsApp e no Instagram. |
 
-| Variável | Para quê |
-| --- | --- |
-| `NEXT_PUBLIC_WHATSAPP` | WhatsApp da recepção, formato internacional e só dígitos (55 + DDD + número). Sem ela, os botões levam à página de contato em vez de virar link quebrado. |
-| `NEXT_PUBLIC_URL_SITE` | Endereço final do site, para a prévia com foto ao compartilhar no WhatsApp e no Instagram. |
+## Painel
+
+Login por e-mail e senha, com dois fatores para os perfis que exigirem. Não há
+cadastro aberto: o primeiro acesso é criado pela linha de comando, e os demais
+pelo próprio painel.
+
+```bash
+npm run usuario:criar -- --nome "Seu Nome" --email voce@exemplo.com --perfil Proprietário
+```
+
+A senha é sorteada e impressa uma única vez — não fica guardada em texto claro
+em lugar nenhum.
+
+**Como a autorização funciona.** As tabelas do Better Auth são globais: o login
+precisa achar a pessoa pelo e-mail antes de existir qualquer contexto de
+anfitrião. A ponte é a tabela `membro`, que diz de qual anfitrião aquele
+usuário é e com qual perfil — e essa é isolada como todo o resto.
+
+Toda página do painel começa por `exigirSessao()` (`src/lib/sessao.ts`), que é
+a camada de acesso. O `proxy.ts` redireciona cedo quem não tem cookie, mas é
+só conforto de navegação: quem autoriza é a função, junto do dado. Verificação
+só na borda é como uma rota nova nasce desprotegida.
 
 ## Fotos do site
 

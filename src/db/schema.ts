@@ -8,6 +8,10 @@
  */
 
 export * from "@/modules/anfitriao/schema";
+// Tabelas do Better Auth (user, session, account, verification, two_factor).
+// Globais e sem RLS de propósito — veja a explicação em src/lib/auth.ts.
+export * from "@/modules/autenticacao/schema";
+export * from "@/modules/autenticacao/schema-membro";
 export * from "@/modules/auditoria/schema";
 export * from "@/modules/calendario/schema";
 export * from "@/modules/tarifas/schema";

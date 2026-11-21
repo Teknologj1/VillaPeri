@@ -2,7 +2,59 @@ import { eq } from "drizzle-orm";
 
 import type { Tx } from "@/db/tenant";
 
-import { propriedade, tipoAcomodacao, unidade } from "./schema";
+import {
+  moduloSistema,
+  type nivelPermissao,
+  perfil,
+  permissao,
+  propriedade,
+  tipoAcomodacao,
+  unidade,
+} from "./schema";
+
+export type Modulo = (typeof moduloSistema.enumValues)[number];
+export type Nivel = (typeof nivelPermissao.enumValues)[number];
+
+export type PerfilComPermissoes = {
+  id: string;
+  nome: string;
+  descontoMaximoPontosBase: number;
+  exigeDoisFatores: boolean;
+  permissoes: Record<Modulo, Nivel>;
+};
+
+/**
+ * O perfil e a matriz de permissões dele, já num mapa pronto para consulta.
+ *
+ * Módulo sem linha na tabela resolve como `nenhum`: o padrão é negar. Um
+ * módulo novo que ainda não foi cadastrado em nenhum perfil fica invisível
+ * para todo mundo até alguém decidir quem pode vê-lo, em vez de nascer aberto.
+ */
+export async function buscarPerfilComPermissoes(
+  tx: Tx,
+  perfilId: string,
+): Promise<PerfilComPermissoes | null> {
+  const [p] = await tx.select().from(perfil).where(eq(perfil.id, perfilId)).limit(1);
+  if (!p) return null;
+
+  const linhas = await tx
+    .select()
+    .from(permissao)
+    .where(eq(permissao.perfilId, perfilId));
+
+  const permissoes = Object.fromEntries(
+    moduloSistema.enumValues.map((m) => [m, "nenhum" as Nivel]),
+  ) as Record<Modulo, Nivel>;
+  for (const l of linhas) permissoes[l.modulo] = l.nivel;
+
+  return {
+    id: p.id,
+    nome: p.nome,
+    descontoMaximoPontosBase: p.descontoMaximoPontosBase,
+    exigeDoisFatores: p.exigeDoisFatores,
+    permissoes,
+  };
+}
 
 export type Propriedade = typeof propriedade.$inferSelect;
 export type TipoAcomodacao = typeof tipoAcomodacao.$inferSelect;

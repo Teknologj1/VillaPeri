@@ -71,6 +71,27 @@
       "when": 1795262657064,
       "tag": "0009_remove_idade_crianca",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795263140324,
+      "tag": "0010_autenticacao",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795263150443,
+      "tag": "0011_forcar_rls_membro",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795263220027,
+      "tag": "0012_politica_membro_usuario",
+      "breakpoints": true
     }
   ]
 }

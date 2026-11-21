@@ -27,6 +27,10 @@ jobs:
       DATABASE_URL: postgresql://villaperi_app:dev_app@localhost:5432/villaperi
       DATABASE_URL_MIGRATOR: postgresql://villaperi_owner:dev_owner@localhost:5432/villaperi
       TZ_PROPRIEDADE: America/Sao_Paulo
+      # Segredo descartável, só para o build e os testes do CI passarem.
+      # O de produção vive nas variáveis de ambiente da Vercel.
+      BETTER_AUTH_SECRET: ci-apenas-para-build-nao-use-em-producao-0000
+      BETTER_AUTH_URL: http://localhost:3000
       # O servidor roda em UTC de propósito: é assim que erros de fuso
       # aparecem no CI em vez de só em produção.
       TZ: UTC

@@ -1,0 +1,1 @@
+CREATE POLICY "membro_do_usuario" ON "membro" AS PERMISSIVE FOR SELECT TO "villaperi_app" USING (usuario_id = nullif(current_setting('app.usuario_id', true), ''));
