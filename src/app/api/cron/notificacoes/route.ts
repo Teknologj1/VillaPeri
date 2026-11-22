@@ -4,11 +4,16 @@ import { anfitrioesAtivos } from "@/lib/anfitriao-publico";
 import { drenarFila } from "@/modules/notificacoes";
 
 /**
- * Entrega o que está na fila de notificações.
+ * A varredura diária da fila de notificações.
  *
- * Chamada pelo cron da Vercel. É aqui que as mensagens saem de verdade: o
- * resto do sistema só as enfileira, dentro da transação do fato que as
- * origina.
+ * NÃO é o caminho normal. A mensagem sai logo depois do fato que a origina
+ * (`entregarEmSeguida`, em `src/lib/entregar.ts`), porque quem acabou de
+ * reservar não pode esperar um horário para receber a confirmação.
+ *
+ * Esta rota é a rede embaixo: recolhe o que falhou — provedor fora do ar,
+ * variável de ambiente que faltava, invocação que morreu no meio. Uma vez
+ * por dia basta para isso, e é o que o plano Hobby da Vercel permite: cron
+ * mais frequente que diário exige o plano Pro, e o build falha ao tentar.
  *
  * Protegida por segredo porque é rota pública que faz trabalho e gasta cota
  * de provedor. A Vercel manda `Authorization: Bearer <CRON_SECRET>` sozinha

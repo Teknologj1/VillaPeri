@@ -18,6 +18,14 @@ export const canalNotificacao = pgEnum("canal_notificacao", [
 
 export const statusNotificacao = pgEnum("status_notificacao", [
   "pendente",
+  /**
+   * Reservada por um drenador, que está enviando agora.
+   *
+   * Existe porque a fila tem mais de um drenador: a tarefa agendada e o
+   * envio logo depois do fato. Sem reservar a linha antes de enviar, os dois
+   * pegam a mesma mensagem pendente e o hóspede recebe duas vezes.
+   */
+  "enviando",
   "enviada",
   "falhou",
 ]);
@@ -68,6 +76,14 @@ export const notificacao = pgTable(
     tentativas: integer("tentativas").notNull().default(0),
     ultimoErro: text("ultimo_erro"),
     enviadaEm: timestamp("enviada_em", { withTimezone: true }),
+    /**
+     * Quando um drenador reservou esta linha para si.
+     *
+     * Serve para destravar: se o drenador morrer no meio do envio, a linha
+     * fica em `enviando` para sempre. Passado o prazo, ela volta a ser
+     * elegível — a mensagem atrasa, em vez de nunca mais sair.
+     */
+    reservadaEm: timestamp("reservada_em", { withTimezone: true }),
   },
   (t) => [
     index("notificacao_fila_idx").on(t.anfitriaoId, t.status, t.criadoEm),
