@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/painel", texto: "Início" },
   { href: "/painel/hoje", texto: "Hoje na casa" },
   { href: "/painel/reservas", texto: "Reservas" },
+  { href: "/painel/pedidos", texto: "Pedidos" },
   { href: "/painel/hospedes", texto: "Hóspedes" },
   { href: "/painel/simulador", texto: "Tarifas" },
 ];

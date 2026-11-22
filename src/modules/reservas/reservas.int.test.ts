@@ -395,6 +395,40 @@ describe("criar reserva", () => {
     expect(ocupadas).toHaveLength(2);
   });
 
+  it("com desconto acima do limite, nasce aguardando aprovação E SEGURA as noites", async () => {
+    // A reserva existe e trava a data enquanto o Gerente decide. Deixar a
+    // data livre durante a espera faria o hóspede perder a reserva no tempo
+    // que a aprovação leva — e a recepção teria prometido algo que o sistema
+    // não guardou.
+    const r = await withTenant(anfitriaoId, (tx) =>
+      criarReserva(
+        tx,
+        anfitriaoId,
+        pedido({
+          descontoPontosBase: 2_000, // 20%
+          statusInicial: "aguardando_aprovacao",
+        }),
+      ),
+    );
+
+    expect(r.status).toBe("aguardando_aprovacao");
+    expect(r.descontoPontosBase).toBe(2_000);
+
+    const ocupadas = await dbOwner
+      .select()
+      .from(noiteOcupada)
+      .where(eq(noiteOcupada.origemId, r.id));
+    expect(ocupadas.map((n) => n.noite).sort()).toEqual([
+      "2027-03-08",
+      "2027-03-09",
+    ]);
+
+    // E o desconto entra no total congelado, não fica só anotado na coluna.
+    const semDesconto = SEMANA * 2;
+    expect(r.totalCentavos).toBeLessThan(semDesconto);
+    expect(r.totalCentavos).toBe(semDesconto - Math.round(semDesconto * 0.2));
+  });
+
   it("grava auditoria da criação", async () => {
     const r = await withTenant(anfitriaoId, (tx) =>
       criarReserva(tx, anfitriaoId, pedido()),

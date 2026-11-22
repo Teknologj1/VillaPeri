@@ -74,12 +74,20 @@ export default function Reservas(props: PageProps<"/painel/reservas">) {
     <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-4xl">Reservas</h1>
-        <Link
-          href="/painel/hoje"
-          className="rounded-full border border-borda px-5 py-2.5 text-sm font-medium transition-colors hover:border-vinho/40"
-        >
-          Hoje na casa
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/painel/hoje"
+            className="rounded-full border border-borda px-5 py-2.5 text-sm font-medium transition-colors hover:border-vinho/40"
+          >
+            Hoje na casa
+          </Link>
+          <Link
+            href="/painel/reservas/nova"
+            className="rounded-full bg-vinho px-5 py-2.5 text-sm font-medium text-creme transition-colors hover:bg-vinho-escuro"
+          >
+            Nova reserva
+          </Link>
+        </div>
       </div>
 
       <Suspense fallback={<Carregando />}>
