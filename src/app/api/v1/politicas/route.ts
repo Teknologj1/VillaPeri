@@ -42,6 +42,24 @@ export const GET = rota({
           ? faseDeCancelamento(politica.faixas)
           : "Política de cancelamento ainda não cadastrada; fale com a recepção.",
       },
+      /**
+       * A saída antecipada é pergunta frequente e tem resposta diferente do
+       * cancelamento — por isso vem separada, com a razão junto. Sem a razão,
+       * a RIIA repete uma negativa seca; com ela, explica por que a regra é
+       * coerente: cancelamento exige antecedência, e quem vai embora antes
+       * avisou com zero dias.
+       */
+      saidaAntecipada: {
+        percentualDevolvido: (politica?.saidaAntecipadaPontosBase ?? 0) / 100,
+        frase:
+          (politica?.saidaAntecipadaPontosBase ?? 0) === 0
+            ? "Em saída antecipada a estadia é cobrada por inteiro. A devolução " +
+              "depende de cancelar com antecedência — quem já está hospedado e " +
+              "decide ir embora antes não entra nesse prazo."
+            : `Em saída antecipada devolvemos ${
+                (politica?.saidaAntecipadaPontosBase ?? 0) / 100
+              }% do valor das noites não usadas.`,
+      },
       estadiaMinima: {
         noites: PRECOS.minimoNoites,
         noitesEmFeriado: PRECOS.minimoNoitesFeriado,

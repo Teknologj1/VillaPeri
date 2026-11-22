@@ -9,7 +9,9 @@ import { comoNoite, hojeNaPropriedade } from "@/lib/data";
 import { centavosDeTexto, formatarReais } from "@/lib/dinheiro";
 import { exigirSessao } from "@/lib/sessao";
 import { podeNoModulo } from "@/modules/autenticacao";
+import { NoiteIndisponivelError } from "@/modules/calendario";
 import {
+  AlteracaoInvalidaError,
   TODOS_OS_STATUS,
   TransicaoInvalidaError,
   buscarReservaPorCodigo,
@@ -17,6 +19,8 @@ import {
   enviarLinkDaFnrh,
   mudarStatus,
   registrarPagamento,
+  remarcar,
+  saidaAntecipada,
 } from "@/modules/reservas";
 
 export type EstadoDaAcao = { erro?: string; aviso?: string } | null;
@@ -227,6 +231,155 @@ export async function acaoDaFnrh(
     if (erro instanceof Error && erro.message.startsWith("Só se confere")) {
       return { erro: erro.message };
     }
+    throw erro;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Variações: remarcar, trocar de unidade, estender, sair antes
+// ---------------------------------------------------------------------------
+
+const esquemaRemarcacao = z.object({
+  codigo: z.string().trim().min(3).max(20),
+  entrada: z.string().optional(),
+  saida: z.string().optional(),
+  unidadeId: z.union([z.uuid(), z.literal("")]).optional(),
+});
+
+/**
+ * Remarca datas e/ou troca de unidade.
+ *
+ * Exige `editar` em reservas: mexe em reserva já fechada, com efeito no
+ * calendário e no que o hóspede deve. Check-in e check-out são operação de
+ * recepção; isto é decisão de quem pode alterar um acordo.
+ */
+export async function remarcarReserva(
+  _estado: EstadoDaAcao,
+  dados: FormData,
+): Promise<EstadoDaAcao> {
+  const sessao = await exigirSessao();
+  if (!podeNoModulo(sessao, "reservas", "editar")) {
+    return { erro: "Seu perfil não remarca reservas." };
+  }
+
+  const analise = esquemaRemarcacao.safeParse(Object.fromEntries(dados));
+  if (!analise.success) return { erro: "Pedido inválido." };
+  const d = analise.data;
+
+  let entrada: string | undefined;
+  let saida: string | undefined;
+  try {
+    entrada = d.entrada ? comoNoite(d.entrada) : undefined;
+    saida = d.saida ? comoNoite(d.saida) : undefined;
+  } catch {
+    return { erro: "Datas inválidas." };
+  }
+
+  try {
+    const resultado = await withTenant(sessao.anfitriaoId, async (tx) => {
+      const ficha = await buscarReservaPorCodigo(tx, d.codigo);
+      if (!ficha) return null;
+
+      return remarcar(tx, sessao.anfitriaoId, ficha.reserva.id, {
+        entrada,
+        saida,
+        unidadeId: d.unidadeId || undefined,
+        autor: { tipo: "usuario", id: sessao.usuarioId },
+      });
+    });
+
+    if (!resultado) return { erro: "Reserva não encontrada." };
+
+    revalidatePath(`/painel/reservas/${d.codigo}`);
+    revalidatePath("/painel/reservas");
+    revalidatePath("/painel/hoje");
+
+    const dif = resultado.diferencaCentavos;
+    return {
+      aviso: !resultado.recalculou
+        ? "Unidade trocada. O preço não muda dentro do mesmo tipo."
+        : dif > 0
+          ? `Remarcada. O hóspede passa a dever mais ${formatarReais(dif)}.`
+          : dif < 0
+            ? `Remarcada. Há ${formatarReais(-dif)} de crédito a devolver.`
+            : "Remarcada. O total não mudou.",
+    };
+  } catch (erro) {
+    if (erro instanceof AlteracaoInvalidaError) return { erro: erro.message };
+    if (erro instanceof NoiteIndisponivelError) {
+      return {
+        erro:
+          (erro.noite
+            ? `A noite de ${erro.noite} já está ocupada. `
+            : "Alguma das novas noites já está ocupada. ") +
+          "Nada foi alterado: a reserva continua com as datas que tinha.",
+      };
+    }
+    throw erro;
+  }
+}
+
+const esquemaSaida = z.object({
+  codigo: z.string().trim().min(3).max(20),
+  novaSaida: z.string(),
+});
+
+/**
+ * O hóspede vai embora antes.
+ *
+ * Libera as noites não usadas no calendário — a casa volta a vender — e
+ * aplica a política configurada, que na Villa Peri cobra a estadia inteira.
+ */
+export async function registrarSaidaAntecipada(
+  _estado: EstadoDaAcao,
+  dados: FormData,
+): Promise<EstadoDaAcao> {
+  const sessao = await exigirSessao();
+  if (!podeNoModulo(sessao, "reservas", "editar")) {
+    return { erro: "Seu perfil não registra saída antecipada." };
+  }
+
+  const analise = esquemaSaida.safeParse(Object.fromEntries(dados));
+  if (!analise.success) return { erro: "Pedido inválido." };
+
+  let novaSaida: string;
+  try {
+    novaSaida = comoNoite(analise.data.novaSaida);
+  } catch {
+    return { erro: "Data inválida." };
+  }
+
+  try {
+    const resultado = await withTenant(sessao.anfitriaoId, async (tx) => {
+      const ficha = await buscarReservaPorCodigo(tx, analise.data.codigo);
+      if (!ficha) return null;
+
+      return saidaAntecipada(
+        tx,
+        sessao.anfitriaoId,
+        ficha.reserva.id,
+        novaSaida,
+        { tipo: "usuario", id: sessao.usuarioId },
+      );
+    });
+
+    if (!resultado) return { erro: "Reserva não encontrada." };
+
+    revalidatePath(`/painel/reservas/${analise.data.codigo}`);
+    revalidatePath("/painel/reservas");
+    revalidatePath("/painel/hoje");
+
+    const n = resultado.noitesLiberadas;
+    return {
+      aviso:
+        `${n} ${n === 1 ? "noite liberada" : "noites liberadas"} no calendário. ` +
+        (resultado.devolucaoCentavos > 0
+          ? `Pela política, devolver ${formatarReais(resultado.devolucaoCentavos)} — ` +
+            "lance o reembolso quando a transferência sair."
+          : "Pela política da casa, a estadia é cobrada por inteiro: nada a devolver."),
+    };
+  } catch (erro) {
+    if (erro instanceof AlteracaoInvalidaError) return { erro: erro.message };
     throw erro;
   }
 }

@@ -221,6 +221,18 @@ export const politicaCancelamento = pgTable(
     nome: text("nome").notNull(),
     faixas: jsonb("faixas").$type<FaixaCancelamento[]>().notNull(),
     /**
+     * Quanto se devolve das noites não usadas numa SAÍDA ANTECIPADA, em
+     * pontos-base. O padrão é 0: cobra-se a estadia inteira.
+     *
+     * Decisão do proprietário, e coerente com o resto da política —
+     * cancelamento exige uma semana de antecedência para haver devolução, e
+     * quem vai embora antes avisou com zero dias. Devolver aqui daria em
+     * cima da hora o que a política nega a quem avisa na véspera.
+     */
+    saidaAntecipadaPontosBase: integer("saida_antecipada_pontos_base")
+      .notNull()
+      .default(0),
+    /**
      * Política específica de feriados e períodos especiais, que a
      * especificação prevê ser diferente da comum.
      */

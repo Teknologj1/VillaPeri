@@ -134,6 +134,13 @@
       "when": 1795366996703,
       "tag": "0018_forcar_rls_riia",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795369169651,
+      "tag": "0019_saida_antecipada",
+      "breakpoints": true
     }
   ]
 }

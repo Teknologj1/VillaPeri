@@ -38,7 +38,9 @@ async function principal() {
   const { fecharConexao } = await import("@/db/client");
   const { withTenant } = await import("@/db/tenant");
   const { anfitriao } = await import("@/modules/anfitriao/schema");
-  const { hospede, reserva } = await import("@/modules/reservas/schema");
+  const { acessoDadoPessoal, hospede, reserva } = await import(
+    "@/modules/reservas/schema"
+  );
   const { noiteOcupada } = await import("@/modules/calendario/schema");
   const { pagamento } = await import("@/modules/reservas/schema");
   const { drizzle } = await import("drizzle-orm/postgres-js");
@@ -78,6 +80,11 @@ async function principal() {
       await dbOwner.delete(noiteOcupada).where(eq(noiteOcupada.origemId, r.id));
       await dbOwner.delete(reserva).where(eq(reserva.id, r.id));
     }
+    // O registro de acesso a dado pessoal aponta para a ficha: tem de sair
+    // primeiro, ou a chave estrangeira recusa.
+    await dbOwner
+      .delete(acessoDadoPessoal)
+      .where(eq(acessoDadoPessoal.hospedeId, h.id));
     await dbOwner.delete(hospede).where(eq(hospede.id, h.id));
   }
 

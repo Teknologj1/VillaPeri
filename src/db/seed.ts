@@ -598,6 +598,37 @@ async function semear() {
         `${CASA.capacidade} hóspedes do mesmo grupo.`,
       termos: ["quarto", "suite", "dividir", "sozinho", "grupo", "casa inteira"],
     },
+    {
+      tema: "politica" as const,
+      titulo: "Saída antecipada",
+      texto:
+        "Se o hóspede decidir ir embora antes da data marcada, a estadia é " +
+        "cobrada por inteiro. A devolução depende de cancelar com " +
+        "antecedência — pela política, no mínimo uma semana antes, salvo caso " +
+        "de força maior. Quem já está hospedado e decide sair antes não entra " +
+        "nesse prazo. As noites não usadas são liberadas no calendário, para " +
+        "a casa poder voltar a vender.",
+      termos: [
+        "sair",
+        "embora",
+        "antes",
+        "antecipada",
+        "desistir",
+        "devolucao",
+        "reembolso",
+        "estorno",
+      ],
+    },
+    {
+      tema: "politica" as const,
+      titulo: "Remarcar datas",
+      texto:
+        "Dá para remarcar: o sistema confere se as novas datas estão livres e " +
+        "dentro das regras, recalcula pelo preço do dia da alteração e cobra " +
+        "ou credita a diferença. Mudar para um feriado custa o feriado. Quem " +
+        "remarca fala com a recepção.",
+      termos: ["remarcar", "mudar", "trocar", "adiar", "data", "alterar"],
+    },
     ...PIRENOPOLIS.map((item) => ({
       tema:
         item.titulo === "Como chegar"

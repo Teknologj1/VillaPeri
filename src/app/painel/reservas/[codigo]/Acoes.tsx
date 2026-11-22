@@ -9,6 +9,8 @@ import {
   acaoDaFnrh,
   lancarPagamento,
   mudarStatusDaReserva,
+  registrarSaidaAntecipada,
+  remarcarReserva,
 } from "./acoes";
 
 const BOTAO =
@@ -310,5 +312,179 @@ export function AcoesDaFnrh({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Remarcar, trocar de unidade, estender e sair antes.
+ *
+ * Tudo atrás de um clique, como o cancelamento: são ações que mexem num
+ * acordo já fechado, e não devem dividir espaço com o botão de check-in.
+ */
+export function Variacoes({
+  codigo,
+  entrada,
+  saida,
+  unidadeId,
+  unidades,
+  hospedado,
+  podeDevolver,
+}: {
+  codigo: string;
+  entrada: string;
+  saida: string;
+  unidadeId: string;
+  unidades: { id: string; nome: string }[];
+  hospedado: boolean;
+  podeDevolver: boolean;
+}) {
+  const [remarcacao, remarcar, remarcando] = useActionState<
+    EstadoDaAcao,
+    FormData
+  >(remarcarReserva, null);
+  const [saidaCedo, registrarSaida, registrando] = useActionState<
+    EstadoDaAcao,
+    FormData
+  >(registrarSaidaAntecipada, null);
+
+  return (
+    <details className="mt-4 rounded-xl border border-borda bg-creme-fundo px-5 py-4">
+      <summary className="cursor-pointer text-sm font-medium">
+        Remarcar, trocar de unidade ou registrar saída antecipada
+      </summary>
+
+      <form action={remarcar} className="mt-5">
+        <input type="hidden" name="codigo" value={codigo} />
+        <h3 className="font-display text-lg">Remarcar ou trocar de unidade</h3>
+        <p className="mt-1 text-sm leading-relaxed text-tinta-suave">
+          Mudar as datas recalcula pelo preço de hoje e mostra a diferença a
+          cobrar ou creditar. Trocar de unidade dentro do mesmo tipo mantém o
+          preço. Se alguma das novas noites estiver ocupada, nada muda.
+        </p>
+
+        {remarcacao?.erro && (
+          <p
+            role="alert"
+            className="mt-4 rounded-lg border border-vinho/30 bg-vinho/5 px-4 py-3 text-sm text-vinho"
+          >
+            {remarcacao.erro}
+          </p>
+        )}
+        {remarcacao?.aviso && (
+          <p
+            role="status"
+            className="mt-4 rounded-lg border border-mata/30 bg-mata/5 px-4 py-3 text-sm text-mata"
+          >
+            {remarcacao.aviso}
+          </p>
+        )}
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div>
+            <label htmlFor="nova-entrada" className="block text-sm font-medium">
+              Entrada
+            </label>
+            <input
+              id="nova-entrada"
+              name="entrada"
+              type="date"
+              defaultValue={entrada}
+              className={CAMPO}
+            />
+          </div>
+          <div>
+            <label htmlFor="nova-saida" className="block text-sm font-medium">
+              Saída
+            </label>
+            <input
+              id="nova-saida"
+              name="saida"
+              type="date"
+              defaultValue={saida}
+              className={CAMPO}
+            />
+          </div>
+          <div>
+            <label htmlFor="nova-unidade" className="block text-sm font-medium">
+              Unidade
+            </label>
+            <select
+              id="nova-unidade"
+              name="unidadeId"
+              defaultValue={unidadeId}
+              className={CAMPO}
+            >
+              {unidades.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={remarcando}
+          className={`${BOTAO} mt-4 border border-vinho text-vinho hover:bg-vinho/5`}
+        >
+          {remarcando ? "Remarcando…" : "Remarcar"}
+        </button>
+      </form>
+
+      {hospedado && (
+        <form action={registrarSaida} className="mt-10 border-t border-borda pt-6">
+          <input type="hidden" name="codigo" value={codigo} />
+          <h3 className="font-display text-lg">Saída antecipada</h3>
+          <p className="mt-1 max-w-prose text-sm leading-relaxed text-tinta-suave">
+            {podeDevolver
+              ? "Libera as noites não usadas e calcula a devolução pela política."
+              : "Libera as noites não usadas no calendário — a casa volta a vender. " +
+                "Pela política da casa, a estadia é cobrada por inteiro: a devolução " +
+                "depende de cancelar com antecedência, e quem já está hospedado avisou " +
+                "com zero dias."}
+          </p>
+
+          {saidaCedo?.erro && (
+            <p
+              role="alert"
+              className="mt-4 rounded-lg border border-vinho/30 bg-vinho/5 px-4 py-3 text-sm text-vinho"
+            >
+              {saidaCedo.erro}
+            </p>
+          )}
+          {saidaCedo?.aviso && (
+            <p
+              role="status"
+              className="mt-4 rounded-lg border border-mata/30 bg-mata/5 px-4 py-3 text-sm text-mata"
+            >
+              {saidaCedo.aviso}
+            </p>
+          )}
+
+          <div className="mt-4 max-w-xs">
+            <label htmlFor="nova-saida-cedo" className="block text-sm font-medium">
+              Foi embora em
+            </label>
+            <input
+              id="nova-saida-cedo"
+              name="novaSaida"
+              type="date"
+              required
+              max={saida}
+              className={CAMPO}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={registrando}
+            className={`${BOTAO} mt-4 border border-vinho text-vinho hover:bg-vinho/5`}
+          >
+            {registrando ? "Registrando…" : "Registrar saída antecipada"}
+          </button>
+        </form>
+      )}
+    </details>
   );
 }
