@@ -76,42 +76,77 @@ export function enviadorResend(chave: string, remetente: string): Enviador {
 // ---------------------------------------------------------------------------
 
 /**
- * Envio pela API da Nuvem do WhatsApp (Meta).
+ * Assinatura HMAC no estilo do Stripe: `t=<época>,v1=<hex>`.
  *
- * Atenção ao usar: fora da janela de 24 horas desde a última mensagem do
- * hóspede, a Meta só entrega MODELO aprovado, não texto livre. Para avisar
- * quem acabou de preencher o formulário do site funciona, porque a conversa
- * parte dele; para lembrar de uma chegada daqui a uma semana, vai precisar de
- * modelo aprovado.
+ * O timestamp entra no que é assinado, e não só no cabeçalho, para que uma
+ * requisição capturada não possa ser reenviada depois com data nova — quem
+ * recebe compara o `t` com o próprio relógio e recusa o que está velho.
+ *
+ * Exportada porque quem valida do outro lado precisa calcular igual.
  */
-export function enviadorWhatsAppMeta(
-  token: string,
-  idDoNumero: string,
-): Enviador {
+export async function assinar(
+  corpo: string,
+  segredo: string,
+  agora: number = Date.now(),
+): Promise<string> {
+  const t = Math.floor(agora / 1000);
+  const chave = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(segredo),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const bytes = await crypto.subtle.sign(
+    "HMAC",
+    chave,
+    new TextEncoder().encode(`${t}.${corpo}`),
+  );
+  const hex = [...new Uint8Array(bytes)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `t=${t},v1=${hex}`;
+}
+
+/**
+ * Entrega o WhatsApp pela RIIA, em vez de falar com a Meta direto.
+ *
+ * Escolha do proprietário, e a mais sensata: a RIIA já atende o WhatsApp da
+ * casa. Um segundo caminho de envio significaria dois números, ou duas vozes
+ * no mesmo número — e o hóspede respondendo a um aviso automático cairia numa
+ * conversa que ninguém está acompanhando.
+ *
+ * Também contorna um limite real da Meta: fora da janela de 24 horas desde a
+ * última mensagem do hóspede, só se entrega modelo aprovado. A RIIA, que já
+ * mantém a conversa, está em melhor posição para lidar com isso.
+ *
+ * O corpo vai assinado para a RIIA saber que o pedido veio daqui, e não de
+ * quem descobriu a URL.
+ */
+export function enviadorRiiaWebhook(url: string, segredo: string): Enviador {
   return {
-    nome: "whatsapp-meta",
+    nome: "riia-webhook",
     async enviar(m) {
-      const resposta = await fetch(
-        `https://graph.facebook.com/v21.0/${idDoNumero}/messages`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            messaging_product: "whatsapp",
-            to: m.destinatario,
-            type: "text",
-            text: { body: m.corpo },
-          }),
+      const corpo = JSON.stringify({
+        canal: "whatsapp",
+        telefone: m.destinatario,
+        nome: m.nomeDestinatario,
+        texto: m.corpo,
+      });
+
+      const resposta = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-VillaPeri-Assinatura": await assinar(corpo, segredo),
         },
-      );
+        body: corpo,
+      });
 
       if (!resposta.ok) {
         const detalhe = await resposta.text().catch(() => "");
         throw new Error(
-          `WhatsApp respondeu ${resposta.status}: ${detalhe.slice(0, 300)}`,
+          `A RIIA respondeu ${resposta.status}: ${detalhe.slice(0, 300)}`,
         );
       }
     },
@@ -138,14 +173,14 @@ export function enviadorDoCanal(canal: "email" | "whatsapp"): Enviador | null {
     return enviadorResend(chave, remetente);
   }
 
-  const token = process.env.WHATSAPP_TOKEN;
-  const idDoNumero = process.env.WHATSAPP_ID_NUMERO;
-  if (!token || !idDoNumero) return null;
-  return enviadorWhatsAppMeta(token, idDoNumero);
+  const url = process.env.RIIA_WEBHOOK_URL;
+  const segredo = process.env.RIIA_WEBHOOK_SEGREDO;
+  if (!url || !segredo) return null;
+  return enviadorRiiaWebhook(url, segredo);
 }
 
 export function variavelFaltante(canal: "email" | "whatsapp"): string {
   return canal === "email"
     ? "RESEND_API_KEY e EMAIL_REMETENTE"
-    : "WHATSAPP_TOKEN e WHATSAPP_ID_NUMERO";
+    : "RIIA_WEBHOOK_URL e RIIA_WEBHOOK_SEGREDO";
 }
