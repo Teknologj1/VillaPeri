@@ -66,6 +66,15 @@ const eslintConfig = defineConfig([
   },
 
   {
+    // O site público não tem sessão, logo não há anfitrião para definir: é
+    // justamente este arquivo que descobre qual é. Ele não lê tabela nenhuma
+    // — chama a função `anfitriao_publico()`, que devolve só id e nome das
+    // contas ativas (migração 0015).
+    files: ["src/lib/anfitriao-publico.ts"],
+    rules: { "no-restricted-imports": "off" },
+  },
+
+  {
     // Testes de integração montam cenário por fora do caminho normal: criam
     // dois anfitriões com a conexão de owner para depois provar, pela conexão
     // da aplicação, que um não enxerga o outro. Precisam alcançar as tabelas

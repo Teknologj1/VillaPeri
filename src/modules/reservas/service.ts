@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from "node:crypto";
 
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, gte } from "drizzle-orm";
 
 import type { Tx } from "@/db/tenant";
 import { type Noite, diferencaEmDias, noitesDaEstadia } from "@/lib/data";
@@ -195,6 +195,26 @@ export async function criarSolicitacao(
   });
 
   return criada;
+}
+
+/**
+ * Quantos pedidos este telefone abriu desde um instante.
+ *
+ * Usado pelo site como freio contra repetição. Fica no serviço, e não na
+ * action, porque a tabela é do módulo — quem está fora pergunta, não lê.
+ */
+export async function contarSolicitacoesRecentes(
+  tx: Tx,
+  telefone: string,
+  desde: Date,
+): Promise<number> {
+  const [linha] = await tx
+    .select({ total: count() })
+    .from(solicitacao)
+    .where(
+      and(eq(solicitacao.telefone, telefone), gte(solicitacao.criadoEm, desde)),
+    );
+  return linha?.total ?? 0;
 }
 
 /** O WhatsApp quer só dígitos; o hóspede digita com parênteses e traço. */

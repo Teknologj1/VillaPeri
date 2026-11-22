@@ -42,6 +42,7 @@ export function Rodape() {
             <li><Link href="/galeria" className="hover:text-vinho">Galeria</Link></li>
             <li><Link href="/pirenopolis" className="hover:text-vinho">Pirenópolis</Link></li>
             <li><Link href="/politicas" className="hover:text-vinho">Políticas e regras</Link></li>
+            <li><Link href="/reservar" className="hover:text-vinho">Reservar</Link></li>
             <li><Link href="/contato" className="hover:text-vinho">Contato</Link></li>
           </ul>
         </nav>

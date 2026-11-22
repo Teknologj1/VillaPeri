@@ -3,13 +3,13 @@ import Link from "next/link";
 
 import { CASA } from "@/modules/conteudo";
 
-import { BotaoWhatsApp } from "./BotaoWhatsApp";
 
 const LINKS = [
   { href: "/a-casa", texto: "A casa" },
   { href: "/galeria", texto: "Galeria" },
   { href: "/pirenopolis", texto: "Pirenópolis" },
   { href: "/politicas", texto: "Políticas" },
+  { href: "/reservar", texto: "Reservar" },
   { href: "/contato", texto: "Contato" },
 ];
 
@@ -72,13 +72,18 @@ export function Cabecalho() {
           `hidden` no próprio botão não escondia nada, e no celular ele cobria
           os links do menu.
         */}
+        {/*
+          Leva à cotação do próprio site, e não direto ao WhatsApp: o
+          visitante vê disponibilidade e preço antes de falar com alguém, e o
+          pedido que sai dali chega ao sistema com data, valor e código.
+        */}
         <div className="hidden shrink-0 lg:block">
-          <BotaoWhatsApp
-            mensagem={`Olá! Vi o site da ${CASA.nome} e gostaria de consultar disponibilidade.`}
-            className="!px-5 !py-2.5 !text-sm"
+          <Link
+            href="/reservar"
+            className="inline-flex items-center justify-center rounded-full bg-vinho px-5 py-2.5 text-sm font-medium text-creme transition-colors hover:bg-vinho-escuro"
           >
             Consultar datas
-          </BotaoWhatsApp>
+          </Link>
         </div>
       </div>
     </header>

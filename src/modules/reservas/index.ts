@@ -21,6 +21,7 @@ export {
   type DadosDaSolicitacaoNova,
   type ResultadoDaMudanca,
   NoiteIndisponivelError,
+  contarSolicitacoesRecentes,
   criarReserva,
   criarSolicitacao,
   mudarStatus,

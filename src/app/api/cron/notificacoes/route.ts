@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { anfitrioesAtivos } from "@/lib/anfitriao-publico";
 import { drenarFila } from "@/modules/notificacoes";
 
 /**
@@ -10,9 +10,9 @@ import { drenarFila } from "@/modules/notificacoes";
  * resto do sistema só as enfileira, dentro da transação do fato que as
  * origina.
  *
- * Protegida por segredo porque é uma rota pública que faz trabalho e gasta
- * cota de provedor. A Vercel manda `Authorization: Bearer <CRON_SECRET>`
- * automaticamente quando a variável existe.
+ * Protegida por segredo porque é rota pública que faz trabalho e gasta cota
+ * de provedor. A Vercel manda `Authorization: Bearer <CRON_SECRET>` sozinha
+ * quando a variável existe.
  */
 export async function GET(request: NextRequest) {
   const segredo = process.env.CRON_SECRET;
@@ -27,14 +27,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
 
-  // Sem sessão aqui, então o anfitrião vem do banco. Hoje é um só; quando
-  // houver marketplace, isto vira um laço sobre as contas ativas.
-  const { db } = await import("@/db/client");
-  const { anfitriao } = await import("@/modules/anfitriao/schema");
-  const contas = await db
-    .select({ id: anfitriao.id, nome: anfitriao.nome })
-    .from(anfitriao)
-    .where(eq(anfitriao.status, "ativa"));
+  // Sem sessão aqui, logo sem contexto de anfitrião: ler a tabela direto
+  // devolveria zero linhas e a fila nunca sairia. A lista vem pela mesma
+  // porta estreita que o site público usa.
+  const contas = await anfitrioesAtivos();
 
   const porConta = [];
   for (const conta of contas) {

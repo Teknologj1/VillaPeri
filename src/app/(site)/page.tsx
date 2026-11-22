@@ -80,11 +80,12 @@ export default function Inicio() {
             · mínimo de {PRECOS.minimoNoites} noites
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <BotaoWhatsApp
-              mensagem={`Olá! Vi o site da ${CASA.nome} e gostaria de consultar disponibilidade e valores.`}
+            <Link
+              href="/reservar"
+              className="inline-flex items-center justify-center rounded-full bg-vinho px-7 py-3.5 text-base font-medium text-creme transition-colors hover:bg-vinho-escuro"
             >
               Consultar datas e valores
-            </BotaoWhatsApp>
+            </Link>
             <Link
               href="/galeria"
               className="inline-flex items-center justify-center rounded-full border border-creme/40 px-7 py-3.5 text-base font-medium text-creme transition-colors hover:bg-creme/10"

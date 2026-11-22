@@ -1,0 +1,5149 @@
+{
+  "id": "e3771a96-1b9b-43fd-88ca-d4cdbaea60c8",
+  "prevId": "032eda0e-8f3e-40ba-9ed7-90cec7f07223",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.anfitriao": {
+      "name": "anfitriao",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "documento": {
+          "name": "documento",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cadastur": {
+          "name": "cadastur",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "status_anfitriao",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "conta_recebimento": {
+          "name": "conta_recebimento",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "anfitriao_documento_unico": {
+          "name": "anfitriao_documento_unico",
+          "columns": [
+            {
+              "expression": "documento",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "anfitriao_isolamento": {
+          "name": "anfitriao_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.assinatura": {
+      "name": "assinatura",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "plano_id": {
+          "name": "plano_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inicio": {
+          "name": "inicio",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fim": {
+          "name": "fim",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ciclo": {
+          "name": "ciclo",
+          "type": "ciclo_assinatura",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'mensal'"
+        },
+        "status_cobranca": {
+          "name": "status_cobranca",
+          "type": "status_cobranca",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ativa'"
+        }
+      },
+      "indexes": {
+        "assinatura_anfitriao_idx": {
+          "name": "assinatura_anfitriao_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "assinatura_anfitriao_id_anfitriao_id_fk": {
+          "name": "assinatura_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "assinatura",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "assinatura_plano_id_plano_id_fk": {
+          "name": "assinatura_plano_id_plano_id_fk",
+          "tableFrom": "assinatura",
+          "columnsFrom": [
+            "plano_id"
+          ],
+          "tableTo": "plano",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "assinatura_isolamento": {
+          "name": "assinatura_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.idempotencia": {
+      "name": "idempotencia",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "chave": {
+          "name": "chave",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rota": {
+          "name": "rota",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hash_requisicao": {
+          "name": "hash_requisicao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resposta": {
+          "name": "resposta",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status_http": {
+          "name": "status_http",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idempotencia_chave_unica": {
+          "name": "idempotencia_chave_unica",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "chave",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "idempotencia_anfitriao_id_anfitriao_id_fk": {
+          "name": "idempotencia_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "idempotencia",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "idempotencia_isolamento": {
+          "name": "idempotencia_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.perfil": {
+      "name": "perfil",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sistema": {
+          "name": "sistema",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "desconto_maximo_pontos_base": {
+          "name": "desconto_maximo_pontos_base",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "exige_dois_fatores": {
+          "name": "exige_dois_fatores",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "perfil_nome_unico": {
+          "name": "perfil_nome_unico",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "nome",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "perfil_anfitriao_id_anfitriao_id_fk": {
+          "name": "perfil_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "perfil",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "perfil_isolamento": {
+          "name": "perfil_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.permissao": {
+      "name": "permissao",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "perfil_id": {
+          "name": "perfil_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modulo": {
+          "name": "modulo",
+          "type": "modulo_sistema",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nivel": {
+          "name": "nivel",
+          "type": "nivel_permissao",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'nenhum'"
+        },
+        "observacao": {
+          "name": "observacao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "permissao_unica": {
+          "name": "permissao_unica",
+          "columns": [
+            {
+              "expression": "perfil_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "modulo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "permissao_anfitriao_id_anfitriao_id_fk": {
+          "name": "permissao_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "permissao",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "permissao_perfil_id_perfil_id_fk": {
+          "name": "permissao_perfil_id_perfil_id_fk",
+          "tableFrom": "permissao",
+          "columnsFrom": [
+            "perfil_id"
+          ],
+          "tableTo": "perfil",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "permissao_isolamento": {
+          "name": "permissao_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.plano": {
+      "name": "plano",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "comissao_pontos_base": {
+          "name": "comissao_pontos_base",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mensalidade_centavos": {
+          "name": "mensalidade_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "ativo": {
+          "name": "ativo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "plano_nome_unico": {
+          "name": "plano_nome_unico",
+          "columns": [
+            {
+              "expression": "nome",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "plano_leitura": {
+          "name": "plano_leitura",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.propriedade": {
+      "name": "propriedade",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "endereco": {
+          "name": "endereco",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cidade": {
+          "name": "cidade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uf": {
+          "name": "uf",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fuso": {
+          "name": "fuso",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'America/Sao_Paulo'"
+        },
+        "moeda": {
+          "name": "moeda",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'BRL'"
+        },
+        "checkin_padrao": {
+          "name": "checkin_padrao",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'14:00'"
+        },
+        "checkout_padrao": {
+          "name": "checkout_padrao",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'12:00'"
+        },
+        "dias_fim_de_semana": {
+          "name": "dias_fim_de_semana",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[5,6]'::jsonb"
+        },
+        "regras_da_casa": {
+          "name": "regras_da_casa",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "sinal_pontos_base": {
+          "name": "sinal_pontos_base",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3000
+        },
+        "email_contato": {
+          "name": "email_contato",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "whatsapp_contato": {
+          "name": "whatsapp_contato",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aceita_pets": {
+          "name": "aceita_pets",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "propriedade_anfitriao_idx": {
+          "name": "propriedade_anfitriao_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "propriedade_anfitriao_id_anfitriao_id_fk": {
+          "name": "propriedade_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "propriedade",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "propriedade_isolamento": {
+          "name": "propriedade_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tipo_acomodacao": {
+      "name": "tipo_acomodacao",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "propriedade_id": {
+          "name": "propriedade_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "capacidade": {
+          "name": "capacidade",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quartos": {
+          "name": "quartos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "camas": {
+          "name": "camas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "banheiros": {
+          "name": "banheiros",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "modo_preco": {
+          "name": "modo_preco",
+          "type": "modo_preco",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'acomodacao'"
+        },
+        "ocupacao_base": {
+          "name": "ocupacao_base",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "idade_minima_crianca": {
+          "name": "idade_minima_crianca",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5
+        },
+        "idade_maxima_crianca": {
+          "name": "idade_maxima_crianca",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 9
+        },
+        "comodidades": {
+          "name": "comodidades",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "fotos": {
+          "name": "fotos",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "ativo": {
+          "name": "ativo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "tipo_slug_unico": {
+          "name": "tipo_slug_unico",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "tipo_propriedade_idx": {
+          "name": "tipo_propriedade_idx",
+          "columns": [
+            {
+              "expression": "propriedade_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "tipo_acomodacao_anfitriao_id_anfitriao_id_fk": {
+          "name": "tipo_acomodacao_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "tipo_acomodacao",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "tipo_acomodacao_propriedade_id_propriedade_id_fk": {
+          "name": "tipo_acomodacao_propriedade_id_propriedade_id_fk",
+          "tableFrom": "tipo_acomodacao",
+          "columnsFrom": [
+            "propriedade_id"
+          ],
+          "tableTo": "propriedade",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "tipo_acomodacao_isolamento": {
+          "name": "tipo_acomodacao_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.unidade": {
+      "name": "unidade",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo_id": {
+          "name": "tipo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ativa": {
+          "name": "ativa",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "unidade_nome_unico": {
+          "name": "unidade_nome_unico",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "nome",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "unidade_tipo_idx": {
+          "name": "unidade_tipo_idx",
+          "columns": [
+            {
+              "expression": "tipo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "unidade_anfitriao_id_anfitriao_id_fk": {
+          "name": "unidade_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "unidade",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "unidade_tipo_id_tipo_acomodacao_id_fk": {
+          "name": "unidade_tipo_id_tipo_acomodacao_id_fk",
+          "tableFrom": "unidade",
+          "columnsFrom": [
+            "tipo_id"
+          ],
+          "tableTo": "tipo_acomodacao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "unidade_isolamento": {
+          "name": "unidade_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.account": {
+      "name": "account",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_token": {
+          "name": "id_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access_token_expires_at": {
+          "name": "access_token_expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token_expires_at": {
+          "name": "refresh_token_expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "account_userId_idx": {
+          "name": "account_userId_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "account_user_id_user_id_fk": {
+          "name": "account_user_id_user_id_fk",
+          "tableFrom": "account",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "tableTo": "user",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.session": {
+      "name": "session",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ip_address": {
+          "name": "ip_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "session_userId_idx": {
+          "name": "session_userId_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "session_user_id_user_id_fk": {
+          "name": "session_user_id_user_id_fk",
+          "tableFrom": "session",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "tableTo": "user",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "session_token_unique": {
+          "name": "session_token_unique",
+          "columns": [
+            "token"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.two_factor": {
+      "name": "two_factor",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "secret": {
+          "name": "secret",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "backup_codes": {
+          "name": "backup_codes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verified": {
+          "name": "verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "failed_verification_count": {
+          "name": "failed_verification_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "locked_until": {
+          "name": "locked_until",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "twoFactor_secret_idx": {
+          "name": "twoFactor_secret_idx",
+          "columns": [
+            {
+              "expression": "secret",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "twoFactor_userId_idx": {
+          "name": "twoFactor_userId_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "two_factor_user_id_user_id_fk": {
+          "name": "two_factor_user_id_user_id_fk",
+          "tableFrom": "two_factor",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "tableTo": "user",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user": {
+      "name": "user",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email_verified": {
+          "name": "email_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "two_factor_enabled": {
+          "name": "two_factor_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_email_unique": {
+          "name": "user_email_unique",
+          "columns": [
+            "email"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.verification": {
+      "name": "verification",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "identifier": {
+          "name": "identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "verification_identifier_idx": {
+          "name": "verification_identifier_idx",
+          "columns": [
+            {
+              "expression": "identifier",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.membro": {
+      "name": "membro",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "perfil_id": {
+          "name": "perfil_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ativo": {
+          "name": "ativo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "membro_unico": {
+          "name": "membro_unico",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "usuario_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "membro_anfitriao_id_anfitriao_id_fk": {
+          "name": "membro_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "membro",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "membro_usuario_id_user_id_fk": {
+          "name": "membro_usuario_id_user_id_fk",
+          "tableFrom": "membro",
+          "columnsFrom": [
+            "usuario_id"
+          ],
+          "tableTo": "user",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "membro_perfil_id_perfil_id_fk": {
+          "name": "membro_perfil_id_perfil_id_fk",
+          "tableFrom": "membro",
+          "columnsFrom": [
+            "perfil_id"
+          ],
+          "tableTo": "perfil",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "membro_isolamento": {
+          "name": "membro_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        },
+        "membro_do_usuario": {
+          "name": "membro_do_usuario",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "usuario_id = nullif(current_setting('app.usuario_id', true), '')"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.auditoria": {
+      "name": "auditoria",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entidade": {
+          "name": "entidade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entidade_id": {
+          "name": "entidade_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "acao": {
+          "name": "acao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor_antes": {
+          "name": "valor_antes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_depois": {
+          "name": "valor_depois",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autor_tipo": {
+          "name": "autor_tipo",
+          "type": "autor_tipo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "autor_id": {
+          "name": "autor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "conversa_id": {
+          "name": "conversa_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quando": {
+          "name": "quando",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "auditoria_entidade_idx": {
+          "name": "auditoria_entidade_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "entidade",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "entidade_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "auditoria_quando_idx": {
+          "name": "auditoria_quando_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "quando",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "auditoria_isolamento": {
+          "name": "auditoria_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.bloqueio": {
+      "name": "bloqueio",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "propriedade_id": {
+          "name": "propriedade_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo_id": {
+          "name": "tipo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unidade_id": {
+          "name": "unidade_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "primeira_noite": {
+          "name": "primeira_noite",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ultima_noite": {
+          "name": "ultima_noite",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "motivo": {
+          "name": "motivo",
+          "type": "motivo_bloqueio",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "observacao": {
+          "name": "observacao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "repeticao": {
+          "name": "repeticao",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origem": {
+          "name": "origem",
+          "type": "origem_bloqueio",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'manual'"
+        },
+        "id_externo": {
+          "name": "id_externo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "bloqueio_periodo_idx": {
+          "name": "bloqueio_periodo_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "primeira_noite",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "ultima_noite",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "bloqueio_propriedade_id_propriedade_id_fk": {
+          "name": "bloqueio_propriedade_id_propriedade_id_fk",
+          "tableFrom": "bloqueio",
+          "columnsFrom": [
+            "propriedade_id"
+          ],
+          "tableTo": "propriedade",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "bloqueio_tipo_id_tipo_acomodacao_id_fk": {
+          "name": "bloqueio_tipo_id_tipo_acomodacao_id_fk",
+          "tableFrom": "bloqueio",
+          "columnsFrom": [
+            "tipo_id"
+          ],
+          "tableTo": "tipo_acomodacao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "bloqueio_unidade_id_unidade_id_fk": {
+          "name": "bloqueio_unidade_id_unidade_id_fk",
+          "tableFrom": "bloqueio",
+          "columnsFrom": [
+            "unidade_id"
+          ],
+          "tableTo": "unidade",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "bloqueio_isolamento": {
+          "name": "bloqueio_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "bloqueio_escopo_unico": {
+          "name": "bloqueio_escopo_unico",
+          "value": "num_nonnulls(propriedade_id, tipo_id, unidade_id) = 1"
+        },
+        "bloqueio_periodo_valido": {
+          "name": "bloqueio_periodo_valido",
+          "value": "ultima_noite >= primeira_noite"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.noite_ocupada": {
+      "name": "noite_ocupada",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unidade_id": {
+          "name": "unidade_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "noite": {
+          "name": "noite",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origem": {
+          "name": "origem",
+          "type": "origem_noite",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origem_id": {
+          "name": "origem_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "preco_centavos": {
+          "name": "preco_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "regra_tarifa_id": {
+          "name": "regra_tarifa_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "noite_ocupada_unidade_noite": {
+          "name": "noite_ocupada_unidade_noite",
+          "columns": [
+            {
+              "expression": "unidade_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "noite",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "noite_ocupada_origem_idx": {
+          "name": "noite_ocupada_origem_idx",
+          "columns": [
+            {
+              "expression": "origem",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "origem_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "noite_ocupada_busca_idx": {
+          "name": "noite_ocupada_busca_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "noite",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "noite_ocupada_unidade_id_unidade_id_fk": {
+          "name": "noite_ocupada_unidade_id_unidade_id_fk",
+          "tableFrom": "noite_ocupada",
+          "columnsFrom": [
+            "unidade_id"
+          ],
+          "tableTo": "unidade",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "noite_ocupada_isolamento": {
+          "name": "noite_ocupada_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "noite_ocupada_preco_so_de_reserva": {
+          "name": "noite_ocupada_preco_so_de_reserva",
+          "value": "(origem = 'reserva') or (preco_centavos is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.regra_estadia": {
+      "name": "regra_estadia",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "propriedade_id": {
+          "name": "propriedade_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo_id": {
+          "name": "tipo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unidade_id": {
+          "name": "unidade_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vigencia_inicio": {
+          "name": "vigencia_inicio",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vigencia_fim": {
+          "name": "vigencia_fim",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dias_da_semana": {
+          "name": "dias_da_semana",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "somente_em_feriado": {
+          "name": "somente_em_feriado",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "minimo_diarias": {
+          "name": "minimo_diarias",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "maximo_diarias": {
+          "name": "maximo_diarias",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dias_de_entrada": {
+          "name": "dias_de_entrada",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "antecedencia_minima_horas": {
+          "name": "antecedencia_minima_horas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "janela_maxima_dias": {
+          "name": "janela_maxima_dias",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "intervalo_limpeza_noites": {
+          "name": "intervalo_limpeza_noites",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lacuna_curta_permitida": {
+          "name": "lacuna_curta_permitida",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prioridade": {
+          "name": "prioridade",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "ativa": {
+          "name": "ativa",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "regra_estadia_busca_idx": {
+          "name": "regra_estadia_busca_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "vigencia_inicio",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "regra_estadia_propriedade_id_propriedade_id_fk": {
+          "name": "regra_estadia_propriedade_id_propriedade_id_fk",
+          "tableFrom": "regra_estadia",
+          "columnsFrom": [
+            "propriedade_id"
+          ],
+          "tableTo": "propriedade",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "regra_estadia_tipo_id_tipo_acomodacao_id_fk": {
+          "name": "regra_estadia_tipo_id_tipo_acomodacao_id_fk",
+          "tableFrom": "regra_estadia",
+          "columnsFrom": [
+            "tipo_id"
+          ],
+          "tableTo": "tipo_acomodacao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "regra_estadia_unidade_id_unidade_id_fk": {
+          "name": "regra_estadia_unidade_id_unidade_id_fk",
+          "tableFrom": "regra_estadia",
+          "columnsFrom": [
+            "unidade_id"
+          ],
+          "tableTo": "unidade",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "regra_estadia_isolamento": {
+          "name": "regra_estadia_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "regra_estadia_escopo_unico": {
+          "name": "regra_estadia_escopo_unico",
+          "value": "num_nonnulls(propriedade_id, tipo_id, unidade_id) = 1"
+        },
+        "regra_estadia_vigencia_valida": {
+          "name": "regra_estadia_vigencia_valida",
+          "value": "vigencia_fim is null or vigencia_inicio is null or vigencia_fim >= vigencia_inicio"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.cupom": {
+      "name": "cupom",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_desconto",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor": {
+          "name": "valor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vigencia_inicio": {
+          "name": "vigencia_inicio",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vigencia_fim": {
+          "name": "vigencia_fim",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "minimo_noites": {
+          "name": "minimo_noites",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uso_maximo": {
+          "name": "uso_maximo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "usos": {
+          "name": "usos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "ativo": {
+          "name": "ativo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "cupom_codigo_unico": {
+          "name": "cupom_codigo_unico",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "codigo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "cupom_isolamento": {
+          "name": "cupom_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.desconto_estadia_longa": {
+      "name": "desconto_estadia_longa",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo_id": {
+          "name": "tipo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "noites_minimas": {
+          "name": "noites_minimas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "percentual_pontos_base": {
+          "name": "percentual_pontos_base",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ativo": {
+          "name": "ativo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "desconto_longa_idx": {
+          "name": "desconto_longa_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "noites_minimas",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "desconto_estadia_longa_tipo_id_tipo_acomodacao_id_fk": {
+          "name": "desconto_estadia_longa_tipo_id_tipo_acomodacao_id_fk",
+          "tableFrom": "desconto_estadia_longa",
+          "columnsFrom": [
+            "tipo_id"
+          ],
+          "tableTo": "tipo_acomodacao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "desconto_estadia_longa_isolamento": {
+          "name": "desconto_estadia_longa_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.extra": {
+      "name": "extra",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo_id": {
+          "name": "tipo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_centavos": {
+          "name": "valor_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cobranca": {
+          "name": "cobranca",
+          "type": "cobranca_extra",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "obrigatorio": {
+          "name": "obrigatorio",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "ativo": {
+          "name": "ativo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "extra_anfitriao_idx": {
+          "name": "extra_anfitriao_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "extra_tipo_id_tipo_acomodacao_id_fk": {
+          "name": "extra_tipo_id_tipo_acomodacao_id_fk",
+          "tableFrom": "extra",
+          "columnsFrom": [
+            "tipo_id"
+          ],
+          "tableTo": "tipo_acomodacao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "extra_isolamento": {
+          "name": "extra_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.feriado": {
+      "name": "feriado",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ambito": {
+          "name": "ambito",
+          "type": "ambito_feriado",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'nacional'"
+        },
+        "vale_na_vespera": {
+          "name": "vale_na_vespera",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "feriado_unico": {
+          "name": "feriado_unico",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "data",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "nome",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "feriado_data_idx": {
+          "name": "feriado_data_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "data",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "feriado_isolamento": {
+          "name": "feriado_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.politica_cancelamento": {
+      "name": "politica_cancelamento",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "faixas": {
+          "name": "faixas",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "para_periodo_especial": {
+          "name": "para_periodo_especial",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "padrao": {
+          "name": "padrao",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "politica_nome_unico": {
+          "name": "politica_nome_unico",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "nome",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "politica_cancelamento_isolamento": {
+          "name": "politica_cancelamento_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.regra_tarifa": {
+      "name": "regra_tarifa",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "propriedade_id": {
+          "name": "propriedade_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo_id": {
+          "name": "tipo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unidade_id": {
+          "name": "unidade_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nivel": {
+          "name": "nivel",
+          "type": "nivel_tarifa",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vigencia_inicio": {
+          "name": "vigencia_inicio",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vigencia_fim": {
+          "name": "vigencia_fim",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "preco_semana_centavos": {
+          "name": "preco_semana_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "preco_fim_de_semana_centavos": {
+          "name": "preco_fim_de_semana_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "preco_fixo_centavos": {
+          "name": "preco_fixo_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ajuste_pontos_base": {
+          "name": "ajuste_pontos_base",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_pessoa_extra_centavos": {
+          "name": "valor_pessoa_extra_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_crianca_centavos": {
+          "name": "valor_crianca_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aplica_na_vespera": {
+          "name": "aplica_na_vespera",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "prioridade": {
+          "name": "prioridade",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "ativa": {
+          "name": "ativa",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "regra_tarifa_busca_idx": {
+          "name": "regra_tarifa_busca_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "nivel",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "vigencia_inicio",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "regra_tarifa_propriedade_id_propriedade_id_fk": {
+          "name": "regra_tarifa_propriedade_id_propriedade_id_fk",
+          "tableFrom": "regra_tarifa",
+          "columnsFrom": [
+            "propriedade_id"
+          ],
+          "tableTo": "propriedade",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "regra_tarifa_tipo_id_tipo_acomodacao_id_fk": {
+          "name": "regra_tarifa_tipo_id_tipo_acomodacao_id_fk",
+          "tableFrom": "regra_tarifa",
+          "columnsFrom": [
+            "tipo_id"
+          ],
+          "tableTo": "tipo_acomodacao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "regra_tarifa_unidade_id_unidade_id_fk": {
+          "name": "regra_tarifa_unidade_id_unidade_id_fk",
+          "tableFrom": "regra_tarifa",
+          "columnsFrom": [
+            "unidade_id"
+          ],
+          "tableTo": "unidade",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "regra_tarifa_isolamento": {
+          "name": "regra_tarifa_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "regra_tarifa_escopo_unico": {
+          "name": "regra_tarifa_escopo_unico",
+          "value": "num_nonnulls(propriedade_id, tipo_id, unidade_id) = 1"
+        },
+        "regra_tarifa_preco_ou_ajuste": {
+          "name": "regra_tarifa_preco_ou_ajuste",
+          "value": "not (preco_fixo_centavos is not null and ajuste_pontos_base is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.acesso_dado_pessoal": {
+      "name": "acesso_dado_pessoal",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hospede_id": {
+          "name": "hospede_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "motivo": {
+          "name": "motivo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quando": {
+          "name": "quando",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "acesso_hospede_idx": {
+          "name": "acesso_hospede_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "hospede_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "acesso_dado_pessoal_anfitriao_id_anfitriao_id_fk": {
+          "name": "acesso_dado_pessoal_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "acesso_dado_pessoal",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "acesso_dado_pessoal_hospede_id_hospede_id_fk": {
+          "name": "acesso_dado_pessoal_hospede_id_hospede_id_fk",
+          "tableFrom": "acesso_dado_pessoal",
+          "columnsFrom": [
+            "hospede_id"
+          ],
+          "tableTo": "hospede",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "acesso_dado_pessoal_isolamento": {
+          "name": "acesso_dado_pessoal_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.acompanhante": {
+      "name": "acompanhante",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reserva_id": {
+          "name": "reserva_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "documento": {
+          "name": "documento",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nascimento": {
+          "name": "nascimento",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "acompanhante_reserva_idx": {
+          "name": "acompanhante_reserva_idx",
+          "columns": [
+            {
+              "expression": "reserva_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "acompanhante_anfitriao_id_anfitriao_id_fk": {
+          "name": "acompanhante_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "acompanhante",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "acompanhante_reserva_id_reserva_id_fk": {
+          "name": "acompanhante_reserva_id_reserva_id_fk",
+          "tableFrom": "acompanhante",
+          "columnsFrom": [
+            "reserva_id"
+          ],
+          "tableTo": "reserva",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "acompanhante_isolamento": {
+          "name": "acompanhante_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hospede": {
+      "name": "hospede",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "documento": {
+          "name": "documento",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nascimento": {
+          "name": "nascimento",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nacionalidade": {
+          "name": "nacionalidade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'Brasileira'"
+        },
+        "telefone": {
+          "name": "telefone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cidade": {
+          "name": "cidade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uf": {
+          "name": "uf",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "motivo_viagem": {
+          "name": "motivo_viagem",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "preferencias": {
+          "name": "preferencias",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notas_internas": {
+          "name": "notas_internas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aceite_lgpd": {
+          "name": "aceite_lgpd",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "aceite_lgpd_em": {
+          "name": "aceite_lgpd_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recorrente": {
+          "name": "recorrente",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "hospede_nome_idx": {
+          "name": "hospede_nome_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "nome",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "hospede_documento_idx": {
+          "name": "hospede_documento_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "documento",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "hospede_telefone_idx": {
+          "name": "hospede_telefone_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "telefone",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "hospede_anfitriao_id_anfitriao_id_fk": {
+          "name": "hospede_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "hospede",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "hospede_isolamento": {
+          "name": "hospede_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pagamento": {
+      "name": "pagamento",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reserva_id": {
+          "name": "reserva_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_pagamento",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor_centavos": {
+          "name": "valor_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metodo": {
+          "name": "metodo",
+          "type": "metodo_pagamento",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "comprovante": {
+          "name": "comprovante",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observacao": {
+          "name": "observacao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "pagamento_reserva_idx": {
+          "name": "pagamento_reserva_idx",
+          "columns": [
+            {
+              "expression": "reserva_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "pagamento_data_idx": {
+          "name": "pagamento_data_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "data",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "pagamento_anfitriao_id_anfitriao_id_fk": {
+          "name": "pagamento_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "pagamento",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "pagamento_reserva_id_reserva_id_fk": {
+          "name": "pagamento_reserva_id_reserva_id_fk",
+          "tableFrom": "pagamento",
+          "columnsFrom": [
+            "reserva_id"
+          ],
+          "tableTo": "reserva",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "pagamento_isolamento": {
+          "name": "pagamento_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.reserva": {
+      "name": "reserva",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unidade_id": {
+          "name": "unidade_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo_id": {
+          "name": "tipo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entrada": {
+          "name": "entrada",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "saida": {
+          "name": "saida",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "status_reserva",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pre_reserva'"
+        },
+        "canal": {
+          "name": "canal",
+          "type": "canal_reserva",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'balcao'"
+        },
+        "hospede_id": {
+          "name": "hospede_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adultos": {
+          "name": "adultos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "criancas": {
+          "name": "criancas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "orcamento": {
+          "name": "orcamento",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_centavos": {
+          "name": "total_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sinal_centavos": {
+          "name": "sinal_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "desconto_pontos_base": {
+          "name": "desconto_pontos_base",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "aprovado_por": {
+          "name": "aprovado_por",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aprovado_em": {
+          "name": "aprovado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "politica_cancelamento_id": {
+          "name": "politica_cancelamento_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fnrh_status": {
+          "name": "fnrh_status",
+          "type": "status_fnrh",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'nao_enviada'"
+        },
+        "fnrh_token": {
+          "name": "fnrh_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fnrh_expira_em": {
+          "name": "fnrh_expira_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "horario_chegada": {
+          "name": "horario_chegada",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observacoes": {
+          "name": "observacoes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solicitacao_id": {
+          "name": "solicitacao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expira_em": {
+          "name": "expira_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelada_em": {
+          "name": "cancelada_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "motivo_cancelamento": {
+          "name": "motivo_cancelamento",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "reserva_codigo_unico": {
+          "name": "reserva_codigo_unico",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "codigo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "reserva_fnrh_token": {
+          "name": "reserva_fnrh_token",
+          "columns": [
+            {
+              "expression": "fnrh_token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "reserva_periodo_idx": {
+          "name": "reserva_periodo_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "entrada",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "saida",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "reserva_status_idx": {
+          "name": "reserva_status_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "reserva_hospede_idx": {
+          "name": "reserva_hospede_idx",
+          "columns": [
+            {
+              "expression": "hospede_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "reserva_anfitriao_id_anfitriao_id_fk": {
+          "name": "reserva_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "reserva",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "reserva_unidade_id_unidade_id_fk": {
+          "name": "reserva_unidade_id_unidade_id_fk",
+          "tableFrom": "reserva",
+          "columnsFrom": [
+            "unidade_id"
+          ],
+          "tableTo": "unidade",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "reserva_tipo_id_tipo_acomodacao_id_fk": {
+          "name": "reserva_tipo_id_tipo_acomodacao_id_fk",
+          "tableFrom": "reserva",
+          "columnsFrom": [
+            "tipo_id"
+          ],
+          "tableTo": "tipo_acomodacao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "reserva_hospede_id_hospede_id_fk": {
+          "name": "reserva_hospede_id_hospede_id_fk",
+          "tableFrom": "reserva",
+          "columnsFrom": [
+            "hospede_id"
+          ],
+          "tableTo": "hospede",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "reserva_politica_cancelamento_id_politica_cancelamento_id_fk": {
+          "name": "reserva_politica_cancelamento_id_politica_cancelamento_id_fk",
+          "tableFrom": "reserva",
+          "columnsFrom": [
+            "politica_cancelamento_id"
+          ],
+          "tableTo": "politica_cancelamento",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "reserva_solicitacao_id_solicitacao_id_fk": {
+          "name": "reserva_solicitacao_id_solicitacao_id_fk",
+          "tableFrom": "reserva",
+          "columnsFrom": [
+            "solicitacao_id"
+          ],
+          "tableTo": "solicitacao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "reserva_isolamento": {
+          "name": "reserva_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "reserva_periodo_valido": {
+          "name": "reserva_periodo_valido",
+          "value": "saida > entrada"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.reserva_extra": {
+      "name": "reserva_extra",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reserva_id": {
+          "name": "reserva_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor_centavos": {
+          "name": "valor_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "reserva_extra_idx": {
+          "name": "reserva_extra_idx",
+          "columns": [
+            {
+              "expression": "reserva_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "reserva_extra_anfitriao_id_anfitriao_id_fk": {
+          "name": "reserva_extra_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "reserva_extra",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "reserva_extra_reserva_id_reserva_id_fk": {
+          "name": "reserva_extra_reserva_id_reserva_id_fk",
+          "tableFrom": "reserva_extra",
+          "columnsFrom": [
+            "reserva_id"
+          ],
+          "tableTo": "reserva",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "reserva_extra_isolamento": {
+          "name": "reserva_extra_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.solicitacao": {
+      "name": "solicitacao",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telefone": {
+          "name": "telefone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo_id": {
+          "name": "tipo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entrada": {
+          "name": "entrada",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "saida": {
+          "name": "saida",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adultos": {
+          "name": "adultos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "criancas": {
+          "name": "criancas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_cotado_centavos": {
+          "name": "total_cotado_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origem": {
+          "name": "origem",
+          "type": "canal_reserva",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'site'"
+        },
+        "status": {
+          "name": "status",
+          "type": "status_solicitacao",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'nova'"
+        },
+        "observacao": {
+          "name": "observacao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "solicitacao_codigo_unico": {
+          "name": "solicitacao_codigo_unico",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "codigo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "solicitacao_status_idx": {
+          "name": "solicitacao_status_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "solicitacao_anfitriao_id_anfitriao_id_fk": {
+          "name": "solicitacao_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "solicitacao",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "solicitacao_tipo_id_tipo_acomodacao_id_fk": {
+          "name": "solicitacao_tipo_id_tipo_acomodacao_id_fk",
+          "tableFrom": "solicitacao",
+          "columnsFrom": [
+            "tipo_id"
+          ],
+          "tableTo": "tipo_acomodacao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "solicitacao_isolamento": {
+          "name": "solicitacao_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "solicitacao_periodo_valido": {
+          "name": "solicitacao_periodo_valido",
+          "value": "saida > entrada"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.notificacao": {
+      "name": "notificacao",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "anfitriao_id": {
+          "name": "anfitriao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "canal": {
+          "name": "canal",
+          "type": "canal_notificacao",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "para_quem": {
+          "name": "para_quem",
+          "type": "destinatario_notificacao",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "destinatario": {
+          "name": "destinatario",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome_destinatario": {
+          "name": "nome_destinatario",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assunto": {
+          "name": "assunto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "corpo": {
+          "name": "corpo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evento": {
+          "name": "evento",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "referencia_tipo": {
+          "name": "referencia_tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "referencia_id": {
+          "name": "referencia_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "status_notificacao",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pendente'"
+        },
+        "tentativas": {
+          "name": "tentativas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "ultimo_erro": {
+          "name": "ultimo_erro",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "enviada_em": {
+          "name": "enviada_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "notificacao_fila_idx": {
+          "name": "notificacao_fila_idx",
+          "columns": [
+            {
+              "expression": "anfitriao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "criado_em",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "notificacao_referencia_idx": {
+          "name": "notificacao_referencia_idx",
+          "columns": [
+            {
+              "expression": "referencia_tipo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "referencia_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "notificacao_anfitriao_id_anfitriao_id_fk": {
+          "name": "notificacao_anfitriao_id_anfitriao_id_fk",
+          "tableFrom": "notificacao",
+          "columnsFrom": [
+            "anfitriao_id"
+          ],
+          "tableTo": "anfitriao",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "notificacao_isolamento": {
+          "name": "notificacao_isolamento",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "villaperi_app"
+          ],
+          "using": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid",
+          "withCheck": "anfitriao_id = nullif(current_setting('app.anfitriao_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.ciclo_assinatura": {
+      "name": "ciclo_assinatura",
+      "schema": "public",
+      "values": [
+        "mensal",
+        "anual"
+      ]
+    },
+    "public.modo_preco": {
+      "name": "modo_preco",
+      "schema": "public",
+      "values": [
+        "acomodacao",
+        "ocupacao"
+      ]
+    },
+    "public.modulo_sistema": {
+      "name": "modulo_sistema",
+      "schema": "public",
+      "values": [
+        "calendario",
+        "tarifas",
+        "reservas",
+        "hospedes",
+        "checkin",
+        "limpeza",
+        "enxoval",
+        "despesas",
+        "relatorios",
+        "usuarios",
+        "auditoria"
+      ]
+    },
+    "public.nivel_permissao": {
+      "name": "nivel_permissao",
+      "schema": "public",
+      "values": [
+        "nenhum",
+        "ver",
+        "lancar",
+        "editar"
+      ]
+    },
+    "public.status_anfitriao": {
+      "name": "status_anfitriao",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "ativa",
+        "suspensa"
+      ]
+    },
+    "public.status_cobranca": {
+      "name": "status_cobranca",
+      "schema": "public",
+      "values": [
+        "ativa",
+        "atrasada",
+        "cancelada"
+      ]
+    },
+    "public.autor_tipo": {
+      "name": "autor_tipo",
+      "schema": "public",
+      "values": [
+        "usuario",
+        "riia",
+        "sistema"
+      ]
+    },
+    "public.motivo_bloqueio": {
+      "name": "motivo_bloqueio",
+      "schema": "public",
+      "values": [
+        "reforma",
+        "uso_proprietario",
+        "fechamento",
+        "evento_privado",
+        "outro"
+      ]
+    },
+    "public.origem_bloqueio": {
+      "name": "origem_bloqueio",
+      "schema": "public",
+      "values": [
+        "manual",
+        "canal"
+      ]
+    },
+    "public.origem_noite": {
+      "name": "origem_noite",
+      "schema": "public",
+      "values": [
+        "reserva",
+        "bloqueio",
+        "limpeza",
+        "canal"
+      ]
+    },
+    "public.ambito_feriado": {
+      "name": "ambito_feriado",
+      "schema": "public",
+      "values": [
+        "nacional",
+        "estadual",
+        "municipal",
+        "evento"
+      ]
+    },
+    "public.cobranca_extra": {
+      "name": "cobranca_extra",
+      "schema": "public",
+      "values": [
+        "estadia",
+        "noite",
+        "pessoa",
+        "pessoa_noite"
+      ]
+    },
+    "public.nivel_tarifa": {
+      "name": "nivel_tarifa",
+      "schema": "public",
+      "values": [
+        "especial",
+        "feriado",
+        "temporada",
+        "padrao"
+      ]
+    },
+    "public.tipo_desconto": {
+      "name": "tipo_desconto",
+      "schema": "public",
+      "values": [
+        "percentual",
+        "valor"
+      ]
+    },
+    "public.canal_reserva": {
+      "name": "canal_reserva",
+      "schema": "public",
+      "values": [
+        "site",
+        "riia",
+        "whatsapp",
+        "instagram",
+        "indicacao",
+        "balcao",
+        "airbnb",
+        "marketplace"
+      ]
+    },
+    "public.metodo_pagamento": {
+      "name": "metodo_pagamento",
+      "schema": "public",
+      "values": [
+        "pix",
+        "cartao",
+        "dinheiro",
+        "transferencia",
+        "outro"
+      ]
+    },
+    "public.status_fnrh": {
+      "name": "status_fnrh",
+      "schema": "public",
+      "values": [
+        "nao_enviada",
+        "link_enviado",
+        "preenchida",
+        "conferida"
+      ]
+    },
+    "public.status_reserva": {
+      "name": "status_reserva",
+      "schema": "public",
+      "values": [
+        "pre_reserva",
+        "aguardando_aprovacao",
+        "confirmada",
+        "hospedado",
+        "concluida",
+        "cancelada",
+        "no_show"
+      ]
+    },
+    "public.status_solicitacao": {
+      "name": "status_solicitacao",
+      "schema": "public",
+      "values": [
+        "nova",
+        "respondida",
+        "convertida",
+        "descartada"
+      ]
+    },
+    "public.tipo_pagamento": {
+      "name": "tipo_pagamento",
+      "schema": "public",
+      "values": [
+        "sinal",
+        "saldo",
+        "extra",
+        "reembolso"
+      ]
+    },
+    "public.canal_notificacao": {
+      "name": "canal_notificacao",
+      "schema": "public",
+      "values": [
+        "email",
+        "whatsapp"
+      ]
+    },
+    "public.destinatario_notificacao": {
+      "name": "destinatario_notificacao",
+      "schema": "public",
+      "values": [
+        "hospede",
+        "anfitriao"
+      ]
+    },
+    "public.status_notificacao": {
+      "name": "status_notificacao",
+      "schema": "public",
+      "values": [
+        "pendente",
+        "enviada",
+        "falhou"
+      ]
+    }
+  },
+  "schemas": {},
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
