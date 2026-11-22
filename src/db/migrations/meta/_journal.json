@@ -120,6 +120,27 @@
       "when": 1795350308420,
       "tag": "0016_funcao_anfitriao_por_fnrh",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795366961305,
+      "tag": "0017_riia",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795366996703,
+      "tag": "0018_forcar_rls_riia",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795369169651,
+      "tag": "0019_saida_antecipada",
+      "breakpoints": true
     }
   ]
 }

@@ -17,3 +17,4 @@ export * from "@/modules/calendario/schema";
 export * from "@/modules/tarifas/schema";
 export * from "@/modules/reservas/schema";
 export * from "@/modules/notificacoes/schema";
+export * from "@/modules/riia/schema";

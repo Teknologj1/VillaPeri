@@ -7,10 +7,26 @@
  */
 
 export type MensagemParaEnviar = {
+  /**
+   * O id da linha na fila. ESTÁVEL entre tentativas — é a mesma mensagem.
+   *
+   * Vai no corpo do webhook para quem recebe poder descartar repetição. Sem
+   * ele, uma entrega que deu tempo esgotado DEPOIS de a RIIA ter mandado no
+   * WhatsApp faz o hóspede receber a mesma mensagem duas vezes: do nosso
+   * lado a tentativa falhou, do lado dela deu certo.
+   */
+  id: string;
   destinatario: string;
   nomeDestinatario: string | null;
   assunto: string | null;
   corpo: string;
+  /** O fato que originou a mensagem, ex.: `reserva.confirmada`. */
+  evento: string;
+  /** Qual tentativa é esta, a partir de 1. Útil no log de quem recebe. */
+  tentativa: number;
+  /** A que a mensagem se refere: `reserva` ou `solicitacao`, e o id. */
+  referenciaTipo: string | null;
+  referenciaId: string | null;
 };
 
 export type Enviador = {
@@ -128,10 +144,18 @@ export function enviadorRiiaWebhook(url: string, segredo: string): Enviador {
     nome: "riia-webhook",
     async enviar(m) {
       const corpo = JSON.stringify({
+        // O id é o que permite descartar repetição do outro lado: a mesma
+        // mensagem reenviada traz o mesmo id.
+        id: m.id,
         canal: "whatsapp",
         telefone: m.destinatario,
         nome: m.nomeDestinatario,
         texto: m.corpo,
+        evento: m.evento,
+        tentativa: m.tentativa,
+        referencia: m.referenciaTipo
+          ? { tipo: m.referenciaTipo, id: m.referenciaId }
+          : null,
       });
 
       const resposta = await fetch(url, {

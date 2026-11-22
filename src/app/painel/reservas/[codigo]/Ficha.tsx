@@ -13,21 +13,27 @@ import {
 import { formatarReais } from "@/lib/dinheiro";
 import { apenasDigitos, formatarTelefone } from "@/lib/telefone";
 import { exigirSessao } from "@/lib/sessao";
-import { buscarPropriedade } from "@/modules/anfitriao";
+import { buscarPropriedade, listarUnidadesAtivas } from "@/modules/anfitriao";
 import { podeNoModulo } from "@/modules/autenticacao";
 import {
   type ReservaCompleta,
   type StatusReserva,
   destinosDe,
   buscarReservaPorCodigo,
+  seguraNoites,
   registrarAcessoDadoPessoal,
   vencida,
 } from "@/modules/reservas";
-import type { Orcamento } from "@/modules/tarifas";
+import { type Orcamento, buscarPoliticaPadrao } from "@/modules/tarifas";
 
 import { Etiqueta, EtiquetaFnrh } from "../../_componentes/Etiqueta";
 import { SemAcesso } from "../../_componentes/SemAcesso";
-import { AcoesDaFnrh, BotoesDeStatus, FormularioDePagamento } from "./Acoes";
+import {
+  AcoesDaFnrh,
+  BotoesDeStatus,
+  FormularioDePagamento,
+  Variacoes,
+} from "./Acoes";
 
 const ROTULO_PAGAMENTO: Record<string, string> = {
   sinal: "Sinal",
@@ -114,11 +120,20 @@ export async function Ficha({ codigo }: { codigo: string }) {
     }
 
     const propriedade = await buscarPropriedade(tx);
+    const unidades = await listarUnidadesAtivas(tx);
+    const politica = await buscarPoliticaPadrao(tx);
 
     // Decidido aqui, na leitura, e não no render: é onde "agora" existe de
     // verdade, e é o que a regra de expiração manda (a tarefa agendada só
     // limpa; nenhuma correção depende de ela ter rodado no minuto certo).
-    return { ficha, propriedade, vencida: vencida(ficha.reserva, new Date()) };
+    return {
+      ficha,
+      propriedade,
+      unidades,
+      devolveNaSaidaAntecipada:
+        (politica?.saidaAntecipadaPontosBase ?? 0) > 0,
+      vencida: vencida(ficha.reserva, new Date()),
+    };
   });
 
   if (!dados) notFound();
@@ -431,6 +446,20 @@ export async function Ficha({ codigo }: { codigo: string }) {
 
       <Secao titulo="O que fazer agora">
         <BotoesDeStatus codigo={r.codigo} destinos={destinosDe(status)} />
+
+        {podeNoModulo(sessao, "reservas", "editar") &&
+          seguraNoites(status) &&
+          status !== "concluida" && (
+            <Variacoes
+              codigo={r.codigo}
+              entrada={r.entrada}
+              saida={r.saida}
+              unidadeId={r.unidadeId}
+              unidades={dados.unidades.map((u) => ({ id: u.id, nome: u.nome }))}
+              hospedado={status === "hospedado"}
+              podeDevolver={dados.devolveNaSaidaAntecipada}
+            />
+          )}
       </Secao>
 
       <p className="mt-12">

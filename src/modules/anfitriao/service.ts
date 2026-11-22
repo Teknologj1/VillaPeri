@@ -4,6 +4,7 @@ import type { Tx } from "@/db/tenant";
 
 import {
   anfitriao,
+  idempotencia,
   moduloSistema,
   type nivelPermissao,
   perfil,
@@ -116,4 +117,67 @@ export async function listarUnidades(tx: Tx): Promise<Unidade[]> {
 
 export async function listarUnidadesAtivas(tx: Tx): Promise<Unidade[]> {
   return tx.select().from(unidade).where(eq(unidade.ativa, true));
+}
+
+// ---------------------------------------------------------------------------
+// Idempotência
+// ---------------------------------------------------------------------------
+
+export type RespostaGuardada = {
+  hashRequisicao: string;
+  resposta: unknown;
+  statusHttp: number;
+};
+
+/**
+ * A resposta já produzida para uma chave de idempotência, se houver.
+ *
+ * A RIIA repete uma chamada quando a conversa do WhatsApp reenvia a mesma
+ * mensagem — e "criar pré-reserva" repetido viraria duas reservas. Mora no
+ * módulo Anfitrião porque a tabela é da plataforma, não de um domínio: a
+ * mesma porta serve a API da RIIA, ao marketplace e a qualquer integração que
+ * venha depois.
+ */
+export async function respostaGuardada(
+  tx: Tx,
+  chave: string,
+): Promise<RespostaGuardada | null> {
+  const [linha] = await tx
+    .select()
+    .from(idempotencia)
+    .where(eq(idempotencia.chave, chave))
+    .limit(1);
+  if (!linha) return null;
+  return {
+    hashRequisicao: linha.hashRequisicao,
+    resposta: linha.resposta,
+    statusHttp: linha.statusHttp,
+  };
+}
+
+export async function lembrarResposta(
+  tx: Tx,
+  anfitriaoId: string,
+  dados: {
+    chave: string;
+    rota: string;
+    hashRequisicao: string;
+    resposta: unknown;
+    statusHttp: number;
+  },
+): Promise<void> {
+  // `onConflictDoNothing` porque duas chamadas simultâneas com a mesma chave
+  // são exatamente o caso que a idempotência existe para tratar: uma grava, a
+  // outra encontra a linha pronta.
+  await tx
+    .insert(idempotencia)
+    .values({
+      anfitriaoId,
+      chave: dados.chave,
+      rota: dados.rota,
+      hashRequisicao: dados.hashRequisicao,
+      resposta: dados.resposta as object,
+      statusHttp: dados.statusHttp,
+    })
+    .onConflictDoNothing();
 }

@@ -65,3 +65,12 @@ export {
   fichaPorToken,
   preencherFnrh,
 } from "./fnrh";
+
+export {
+  AlteracaoInvalidaError,
+  type PedidoDeRemarcacao,
+  type ResultadoDaAlteracao,
+  type ResultadoDaSaidaAntecipada,
+  remarcar,
+  saidaAntecipada,
+} from "./alteracoes";

@@ -12,6 +12,33 @@ export function apenasDigitos(telefone: string): string {
 }
 
 /**
+ * A forma CANÔNICA: dígitos, sempre com código do país.
+ *
+ * É esta que serve de identidade. O mesmo hóspede escreve "(62) 98888-7777"
+ * no formulário do site e "5562988887777" chega pela API do WhatsApp; sem
+ * uma forma só, viram duas fichas, duas conversas — e `consultar_reserva`
+ * recusa o próprio titular porque o número "não bate".
+ *
+ * Números nacionais (10 ou 11 dígitos) ganham o 55 na frente. Qualquer outro
+ * comprimento é devolvido como está: já vem com código de país, ou é um
+ * número que não se deve adivinhar. A casa recebe hóspede de fora.
+ */
+export function telefoneCanonico(telefone: string): string {
+  const d = apenasDigitos(telefone);
+  if (d.length === 10 || d.length === 11) return `55${d}`;
+  return d;
+}
+
+/** Se os dois números são a mesma pessoa, escritos de jeitos diferentes. */
+export function mesmoTelefone(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): boolean {
+  if (!a || !b) return false;
+  return telefoneCanonico(a) === telefoneCanonico(b);
+}
+
+/**
  * Formata um número brasileiro para leitura: "(62) 98800-1004".
  *
  * O que não reconhece volta como veio, sem tentar adivinhar. Um número

@@ -223,3 +223,152 @@ export async function fecharDatas(
 
   return { bloqueioId, noitesFechadas: noites.length * alvo.length };
 }
+
+// ---------------------------------------------------------------------------
+// Sugerir datas
+// ---------------------------------------------------------------------------
+
+export type PedidoDeSugestao = {
+  /** Data que o hóspede queria. A busca sai dela para os dois lados. */
+  entrada: Noite;
+  noites: number;
+  adultos: number;
+  criancas: number;
+  tipoId?: string;
+  /** Quantos dias procurar para frente e para trás. */
+  janelaDias?: number;
+  /** Quantas sugestões devolver. */
+  quantas?: number;
+};
+
+export type Sugestao = {
+  entrada: Noite;
+  saida: Noite;
+  /** Dias de distância da data pedida; negativo é antes. */
+  distanciaDias: number;
+};
+
+/**
+ * Datas próximas que cabem nas regras, quando a pedida não cabe.
+ *
+ * Procura alternando para frente e para trás a partir da data pedida, para
+ * que a primeira sugestão seja sempre a mais próxima — quem queria sexta
+ * aceita quinta mais facilmente que a sexta do mês seguinte.
+ *
+ * Carrega o calendário UMA vez para a janela inteira e roda o motor puro em
+ * cima dele. Chamar `consultarDisponibilidade` por candidato seriam dezenas
+ * de idas ao banco para responder a uma pergunta de WhatsApp.
+ */
+export async function sugerirDatas(
+  tx: Tx,
+  pedido: PedidoDeSugestao,
+  agora: Date = new Date(),
+): Promise<Sugestao[]> {
+  const janela = pedido.janelaDias ?? 21;
+  const quantas = pedido.quantas ?? 4;
+
+  const propriedade = await buscarPropriedade(tx);
+  const [tipos, unidades, regras] = await Promise.all([
+    listarTipos(tx),
+    listarUnidadesAtivas(tx),
+    buscarRegrasEstadia(tx),
+  ]);
+
+  const inicioDaJanela = somarDias(pedido.entrada, -janela - 1);
+  const fimDaJanela = somarDias(
+    pedido.entrada,
+    janela + pedido.noites + 8,
+  );
+
+  const [ocupadas, feriados] = await Promise.all([
+    buscarNoitesOcupadas(tx, {
+      unidadeIds: unidades.map((u) => u.id),
+      de: inicioDaJanela,
+      ate: fimDaJanela,
+    }),
+    listarFeriados(tx, inicioDaJanela, fimDaJanela),
+  ]);
+
+  const diasDeFeriado = new Set(feriados.map((f) => f.data));
+  const hoje = hojeNaPropriedade(propriedade.fuso, agora);
+
+  const comum = {
+    propriedadeId: propriedade.id,
+    tipos: tipos.map((t) => ({
+      id: t.id,
+      nome: t.nome,
+      capacidade: t.capacidade,
+    })),
+    unidades: unidades.map((u) => ({
+      id: u.id,
+      tipoId: u.tipoId,
+      ativa: u.ativa,
+    })),
+    ocupadas: ocupadas.map((o) => ({ unidadeId: o.unidadeId, noite: o.noite })),
+    regras: regras.map((r) => ({
+      id: r.id,
+      nome: r.nome,
+      propriedadeId: r.propriedadeId,
+      tipoId: r.tipoId,
+      unidadeId: r.unidadeId,
+      vigenciaInicio: r.vigenciaInicio,
+      vigenciaFim: r.vigenciaFim,
+      diasDaSemana: r.diasDaSemana,
+      somenteEmFeriado: r.somenteEmFeriado,
+      minimoDiarias: r.minimoDiarias,
+      maximoDiarias: r.maximoDiarias,
+      diasDeEntrada: r.diasDeEntrada,
+      antecedenciaMinimaHoras: r.antecedenciaMinimaHoras,
+      janelaMaximaDias: r.janelaMaximaDias,
+      intervaloLimpezaNoites: r.intervaloLimpezaNoites,
+      lacunaCurtaPermitida: r.lacunaCurtaPermitida,
+      prioridade: r.prioridade,
+      ativa: r.ativa,
+    })),
+    hoje,
+  };
+
+  const achadas: Sugestao[] = [];
+
+  for (const distancia of alternando(janela)) {
+    const entrada = somarDias(pedido.entrada, distancia);
+    // Não sugere passado: seria uma resposta que o hóspede não pode aceitar.
+    if (entrada < hoje) continue;
+
+    const saida = somarDias(entrada, pedido.noites);
+
+    const resultado = calcularDisponibilidade({
+      ...comum,
+      pedido: {
+        entrada,
+        saida,
+        adultos: pedido.adultos,
+        criancas: pedido.criancas,
+        tipoId: pedido.tipoId,
+      },
+      entradaEhFeriado: diasDeFeriado.has(entrada),
+      horasAteCheckin: horasAteCheckin(
+        entrada,
+        propriedade.checkinPadrao,
+        propriedade.fuso,
+        agora,
+      ),
+    });
+
+    if (resultado.ofertas.some((o) => o.disponivel)) {
+      achadas.push({ entrada, saida, distanciaDias: distancia });
+      if (achadas.length >= quantas) break;
+    }
+  }
+
+  return achadas;
+}
+
+/** 0, +1, −1, +2, −2… até o limite. A mais próxima primeiro. */
+function* alternando(limite: number): Generator<number> {
+  yield 0;
+  for (let d = 1; d <= limite; d++) {
+    yield d;
+    yield -d;
+  }
+}

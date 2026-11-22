@@ -18,10 +18,12 @@ import { regraEstadia } from "@/modules/calendario/schema";
 import {
   CASA,
   COMODIDADES as GRUPOS_COMODIDADES,
+  PIRENOPOLIS,
   PRECOS,
   REGRAS_DA_CASA,
   SUITES,
 } from "@/modules/conteudo";
+import { baseConhecimento } from "@/modules/riia/schema";
 import { feriadosNoPeriodo, periodosEspeciais } from "@/modules/tarifas/feriados";
 import {
   feriado,
@@ -571,6 +573,96 @@ async function semear() {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Base de conhecimento: o que a RIIA responde, e o site também
+  // -------------------------------------------------------------------------
+  //
+  // Uma fonte só para os dois é o que impede a secretária de IA dizer uma
+  // coisa e o site outra sobre o mesmo assunto — e o hóspede descobrir a
+  // diferença na hora da reclamação. O conteúdo nasce do módulo Conteúdo, que
+  // já alimenta as páginas; o proprietário edita depois pelo painel.
+
+  const conhecimento: {
+    tema: "politica" | "passeio" | "como_chegar" | "pergunta_frequente" | "a_casa";
+    titulo: string;
+    texto: string;
+    termos: string[];
+  }[] = [
+    {
+      tema: "a_casa",
+      titulo: "A casa é locada inteira",
+      texto:
+        `A ${CASA.nome} é locada INTEIRA e exclusiva para uma única reserva. ` +
+        `Não dividimos a casa entre grupos: são ${CASA.quartos} suítes, ` +
+        `${CASA.camas} camas e ${CASA.banheiros} banheiros para até ` +
+        `${CASA.capacidade} hóspedes do mesmo grupo.`,
+      termos: ["quarto", "suite", "dividir", "sozinho", "grupo", "casa inteira"],
+    },
+    {
+      tema: "politica" as const,
+      titulo: "Saída antecipada",
+      texto:
+        "Se o hóspede decidir ir embora antes da data marcada, a estadia é " +
+        "cobrada por inteiro. A devolução depende de cancelar com " +
+        "antecedência — pela política, no mínimo uma semana antes, salvo caso " +
+        "de força maior. Quem já está hospedado e decide sair antes não entra " +
+        "nesse prazo. As noites não usadas são liberadas no calendário, para " +
+        "a casa poder voltar a vender.",
+      termos: [
+        "sair",
+        "embora",
+        "antes",
+        "antecipada",
+        "desistir",
+        "devolucao",
+        "reembolso",
+        "estorno",
+      ],
+    },
+    {
+      tema: "politica" as const,
+      titulo: "Remarcar datas",
+      texto:
+        "Dá para remarcar: o sistema confere se as novas datas estão livres e " +
+        "dentro das regras, recalcula pelo preço do dia da alteração e cobra " +
+        "ou credita a diferença. Mudar para um feriado custa o feriado. Quem " +
+        "remarca fala com a recepção.",
+      termos: ["remarcar", "mudar", "trocar", "adiar", "data", "alterar"],
+    },
+    ...PIRENOPOLIS.map((item) => ({
+      tema:
+        item.titulo === "Como chegar"
+          ? ("como_chegar" as const)
+          : ("passeio" as const),
+      titulo: item.titulo,
+      texto: item.texto,
+      termos: item.titulo.toLowerCase().split(/\s+/),
+    })),
+    ...REGRAS_DA_CASA.map((regra, i) => ({
+      tema: "politica" as const,
+      titulo: `Regra da casa ${i + 1}`,
+      texto: regra,
+      termos: ["regra", "barulho", "festa", "som", "mico", "silencio"],
+    })),
+  ];
+
+  let conhecimentoNovo = 0;
+  for (const [i, item] of conhecimento.entries()) {
+    const resultado = await db
+      .insert(baseConhecimento)
+      .values({
+        anfitriaoId: villaPeri.id,
+        tema: item.tema,
+        titulo: item.titulo,
+        texto: item.texto,
+        termos: item.termos,
+        ordem: i,
+      })
+      .onConflictDoNothing()
+      .returning();
+    conhecimentoNovo += resultado.length;
+  }
+
   console.log("\nPronto:");
   console.log(`  anfitrião    Villa Peri (${villaPeri.id})`);
   console.log(`  plano        Própria, 0% de comissão, sem mensalidade`);
@@ -610,6 +702,10 @@ async function semear() {
   console.log(
     `  estadia      mínimo ${ESTADIA.minimoNoites} noites, ${ESTADIA.minimoNoitesFeriado} em feriado · ` +
       `check-in ${ESTADIA.checkin}, check-out ${ESTADIA.checkout} · sinal ${TARIFA.sinalPontosBase / 100}%`,
+  );
+  console.log(
+    `  conhecimento ${conhecimento.length} itens para a RIIA e o site ` +
+      `(${conhecimentoNovo} novos)`,
   );
 
 }
