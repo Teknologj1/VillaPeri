@@ -25,8 +25,10 @@ export {
 } from "./service";
 
 export {
+  type DadosDaFnrh,
   type DadosDaReserva,
   type DadosDaSolicitacao,
+  linkDaFnrh,
   reservaConfirmadaParaAnfitriao,
   reservaConfirmadaParaHospede,
   solicitacaoParaAnfitriao,

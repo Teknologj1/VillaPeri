@@ -113,6 +113,13 @@
       "when": 1795347718400,
       "tag": "0015_funcao_anfitriao_publico",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1795350308420,
+      "tag": "0016_funcao_anfitriao_por_fnrh",
+      "breakpoints": true
     }
   ]
 }

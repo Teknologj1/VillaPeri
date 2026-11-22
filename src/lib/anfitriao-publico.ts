@@ -32,3 +32,25 @@ export async function anfitrioesAtivos(): Promise<
     sql`select id, nome from anfitriao_publico()`,
   );
 }
+
+/**
+ * De qual anfitrião é um link de ficha de registro.
+ *
+ * O hóspede abre `/fnrh/<token>` sem sessão nenhuma, e para ler a reserva é
+ * preciso antes saber o anfitrião que define o contexto do RLS. A função
+ * `anfitriao_por_token_fnrh()` devolve só esse uuid, e só para token válido,
+ * dentro do prazo, de reserva em estado que aceita preenchimento (migração
+ * 0016). Nenhum dado do hóspede sai dela.
+ *
+ * Quem recebe o id ainda entra no contexto e passa pelas políticas normais —
+ * e o serviço revalida o token ao ler e ao gravar. Esta função responde "de
+ * quem é", não "pode".
+ */
+export async function anfitriaoPorTokenFnrh(
+  token: string,
+): Promise<string | null> {
+  const linhas = await db.execute<{ anfitriao_por_token_fnrh: string | null }>(
+    sql`select anfitriao_por_token_fnrh(${token})`,
+  );
+  return linhas[0]?.anfitriao_por_token_fnrh ?? null;
+}

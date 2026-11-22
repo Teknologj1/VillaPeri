@@ -150,3 +150,50 @@ Sinal: ${formatarReais(d.sinalCentavos)}
 As noites já estão marcadas no calendário.`,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Ficha de registro de hóspedes
+// ---------------------------------------------------------------------------
+
+export type DadosDaFnrh = {
+  nomeHospede: string;
+  nomeDaCasa: string;
+  entrada: Noite;
+  token: string;
+};
+
+/**
+ * O link da ficha, para o hóspede preencher pelo celular.
+ *
+ * O endereço é montado a partir de `NEXT_PUBLIC_URL_SITE`. Sem ela, o link
+ * sai relativo e não funciona em lugar nenhum — então a função devolve o
+ * endereço junto, e quem chama mostra o mesmo texto na tela para a recepção
+ * poder copiar e mandar à mão enquanto a variável não existir.
+ *
+ * A mensagem diz POR QUE a ficha é obrigatória. "Preencha este formulário"
+ * sem motivo, vindo por WhatsApp e com um link, é exatamente o formato de um
+ * golpe — e o hóspede desconfiar é a reação certa dele.
+ */
+export function linkDaFnrh(d: DadosDaFnrh) {
+  const base = process.env.NEXT_PUBLIC_URL_SITE ?? "";
+  const url = `${base.replace(/\/$/, "")}/fnrh/${d.token}`;
+
+  return {
+    url,
+    assunto: `Ficha de registro · ${d.nomeDaCasa}`,
+    corpo: `Olá, ${d.nomeHospede}!
+
+Antes da sua chegada em ${porExtenso(d.entrada)}, precisamos da ficha de
+registro de hóspedes. Ela é exigida por lei de todo meio de hospedagem no
+Brasil e, desde abril de 2026, é feita em formato digital.
+
+Leva dois minutos e dá para preencher pelo celular:
+${url}
+
+Pedimos documento, data de nascimento e cidade de origem — do titular e de
+quem vem junto. Nada além disso.
+
+Qualquer dúvida, é só responder esta mensagem.
+${d.nomeDaCasa}`,
+  };
+}

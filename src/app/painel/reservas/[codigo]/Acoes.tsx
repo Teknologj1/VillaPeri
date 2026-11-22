@@ -6,6 +6,7 @@ import { ACAO_PARA, type StatusReserva } from "@/modules/reservas/cliente";
 
 import {
   type EstadoDaAcao,
+  acaoDaFnrh,
   lancarPagamento,
   mudarStatusDaReserva,
 } from "./acoes";
@@ -243,5 +244,71 @@ export function FormularioDePagamento({
         </p>
       </div>
     </form>
+  );
+}
+
+export function AcoesDaFnrh({
+  codigo,
+  status,
+}: {
+  codigo: string;
+  status: string;
+}) {
+  const [estado, agir, pendente] = useActionState<EstadoDaAcao, FormData>(
+    acaoDaFnrh,
+    null,
+  );
+
+  return (
+    <div className="mt-4">
+      {estado?.erro && (
+        <p
+          role="alert"
+          className="mb-4 rounded-lg border border-vinho/30 bg-vinho/5 px-4 py-3 text-sm text-vinho"
+        >
+          {estado.erro}
+        </p>
+      )}
+      {estado?.aviso && (
+        <p
+          role="status"
+          className="mb-4 rounded-lg border border-mata/30 bg-mata/5 px-4 py-3 text-sm break-words text-mata"
+        >
+          {estado.aviso}
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-3">
+        <form action={agir}>
+          <input type="hidden" name="codigo" value={codigo} />
+          <input type="hidden" name="acao" value="enviar" />
+          <button
+            type="submit"
+            disabled={pendente}
+            className={`${BOTAO} ${
+              status === "nao_enviada"
+                ? "bg-vinho text-creme hover:bg-vinho-escuro"
+                : "border border-borda hover:border-vinho/40"
+            }`}
+          >
+            {status === "nao_enviada" ? "Enviar o link" : "Reenviar o link"}
+          </button>
+        </form>
+
+        {status === "preenchida" && (
+          <form action={agir}>
+            <input type="hidden" name="codigo" value={codigo} />
+            <input type="hidden" name="acao" value="conferir" />
+            <button
+              type="submit"
+              disabled={pendente}
+              className={`${BOTAO} bg-vinho text-creme hover:bg-vinho-escuro`}
+            >
+              Marcar como conferida
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
   );
 }

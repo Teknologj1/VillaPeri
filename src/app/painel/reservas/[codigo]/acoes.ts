@@ -13,6 +13,8 @@ import {
   TODOS_OS_STATUS,
   TransicaoInvalidaError,
   buscarReservaPorCodigo,
+  conferirFnrh,
+  enviarLinkDaFnrh,
   mudarStatus,
   registrarPagamento,
 } from "@/modules/reservas";
@@ -158,4 +160,73 @@ export async function lancarPagamento(
   revalidatePath(`/painel/reservas/${d.codigo}`);
   revalidatePath("/painel/reservas");
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Ficha de registro de hóspedes
+// ---------------------------------------------------------------------------
+
+const esquemaFnrh = z.object({
+  codigo: z.string().trim().min(3).max(20),
+  acao: z.enum(["enviar", "conferir"]),
+});
+
+/**
+ * Manda o link da ficha ao hóspede, ou marca a ficha como conferida.
+ *
+ * Duas ações numa action só porque são o mesmo botão em momentos diferentes
+ * do mesmo fluxo — e a tela decide qual mostrar pelo estado da ficha.
+ */
+export async function acaoDaFnrh(
+  _estado: EstadoDaAcao,
+  dados: FormData,
+): Promise<EstadoDaAcao> {
+  const sessao = await exigirSessao();
+
+  const analise = esquemaFnrh.safeParse(Object.fromEntries(dados));
+  if (!analise.success) return { erro: "Pedido inválido." };
+  const { codigo, acao } = analise.data;
+
+  if (!podeNoModulo(sessao, "reservas", "lancar")) {
+    return { erro: "Seu perfil não pode mexer na ficha de registro." };
+  }
+
+  try {
+    const resultado = await withTenant(sessao.anfitriaoId, async (tx) => {
+      const ficha = await buscarReservaPorCodigo(tx, codigo);
+      if (!ficha) return null;
+
+      const autor = { tipo: "usuario" as const, id: sessao.usuarioId };
+
+      if (acao === "conferir") {
+        await conferirFnrh(tx, sessao.anfitriaoId, ficha.reserva.id, autor);
+        return { aviso: "Ficha conferida." };
+      }
+
+      const { url } = await enviarLinkDaFnrh(
+        tx,
+        sessao.anfitriaoId,
+        ficha.reserva.id,
+        autor,
+      );
+      // O link vai na resposta para a recepção poder mandar à mão quando
+      // quiser — e, enquanto não houver provedor configurado, é o único jeito
+      // de ele chegar ao hóspede. A fila guarda a mensagem; ela não some.
+      return { aviso: `Link enfileirado para envio: ${url}` };
+    });
+
+    if (!resultado) return { erro: "Reserva não encontrada." };
+
+    revalidatePath(`/painel/reservas/${codigo}`);
+    revalidatePath("/painel/reservas");
+    revalidatePath("/painel/hoje");
+    return resultado;
+  } catch (erro) {
+    // `conferirFnrh` recusa conferir o que não foi preenchido, com a razão
+    // escrita. Repassar é mais útil que "erro inesperado".
+    if (erro instanceof Error && erro.message.startsWith("Só se confere")) {
+      return { erro: erro.message };
+    }
+    throw erro;
+  }
 }

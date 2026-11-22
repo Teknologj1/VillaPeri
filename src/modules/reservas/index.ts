@@ -55,3 +55,13 @@ export {
   mudarStatus,
   registrarPagamento,
 } from "./service";
+
+export {
+  type DadosDaFnrh,
+  type FichaParaPreencher,
+  type StatusFnrh,
+  conferirFnrh,
+  enviarLinkDaFnrh,
+  fichaPorToken,
+  preencherFnrh,
+} from "./fnrh";

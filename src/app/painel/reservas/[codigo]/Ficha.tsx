@@ -27,7 +27,7 @@ import type { Orcamento } from "@/modules/tarifas";
 
 import { Etiqueta, EtiquetaFnrh } from "../../_componentes/Etiqueta";
 import { SemAcesso } from "../../_componentes/SemAcesso";
-import { BotoesDeStatus, FormularioDePagamento } from "./Acoes";
+import { AcoesDaFnrh, BotoesDeStatus, FormularioDePagamento } from "./Acoes";
 
 const ROTULO_PAGAMENTO: Record<string, string> = {
   sinal: "Sinal",
@@ -360,6 +360,58 @@ export async function Ficha({ codigo }: { codigo: string }) {
         ) : (
           <p className="mt-4 text-sm text-tinta-suave">
             Seu perfil não lança pagamentos.
+          </p>
+        )}
+      </Secao>
+
+      {/* --------------------------------------------------------------- */}
+
+      <Secao titulo="Ficha de registro (FNRH)">
+        <p className="mt-2 max-w-prose text-sm leading-relaxed text-tinta-suave">
+          Obrigatória por lei para todo meio de hospedagem, e em formato
+          digital desde abril de 2026. O hóspede preenche pelo celular, por um
+          link com prazo; a recepção confere antes da chegada.
+        </p>
+
+        <div className="mt-4 rounded-xl border border-borda bg-creme-fundo">
+          <Linha rotulo="Situação">
+            <EtiquetaFnrh status={r.fnrhStatus} />
+          </Linha>
+          {r.fnrhExpiraEm && r.fnrhStatus !== "nao_enviada" && (
+            <Linha rotulo="Link vale até">
+              {formatarInstante(r.fnrhExpiraEm, env.TZ_PROPRIEDADE)}
+            </Linha>
+          )}
+          {vePessoal && (
+            <>
+              <Linha rotulo="Documento do titular">
+                {ficha.hospede.documento ?? (
+                  <span className="text-tinta-suave">ainda não informado</span>
+                )}
+              </Linha>
+              <Linha rotulo="Acompanhantes">
+                {ficha.acompanhantes.length === 0 ? (
+                  <span className="text-tinta-suave">nenhum registrado</span>
+                ) : (
+                  ficha.acompanhantes.map((a) => a.nome).join(", ")
+                )}
+              </Linha>
+              <Linha rotulo="Consentimento (LGPD)">
+                {ficha.hospede.aceiteLgpdEm ? (
+                  formatarInstante(ficha.hospede.aceiteLgpdEm, env.TZ_PROPRIEDADE)
+                ) : (
+                  <span className="text-tinta-suave">ainda não dado</span>
+                )}
+              </Linha>
+            </>
+          )}
+        </div>
+
+        {podeNoModulo(sessao, "reservas", "lancar") ? (
+          <AcoesDaFnrh codigo={r.codigo} status={r.fnrhStatus} />
+        ) : (
+          <p className="mt-4 text-sm text-tinta-suave">
+            Seu perfil não envia nem confere fichas.
           </p>
         )}
       </Secao>
