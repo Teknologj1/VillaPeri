@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, connection } from "next/server";
 
 import { withTenant } from "@/db/tenant";
 import { env } from "@/env";
@@ -30,6 +30,13 @@ import {
  * abertura fica registrada.
  */
 export async function GET() {
+  // Esta rota não recebe `request`, então o Next tentaria PRÉ-RENDERIZÁ-LA
+  // durante o build — e aí lê a sessão num momento em que não há requisição
+  // nem variáveis de servidor, derrubando o build inteiro. Foi o que
+  // aconteceu no deploy. `connection()` marca onde o tempo de requisição
+  // começa: daqui para baixo, nada roda no build.
+  await connection();
+
   const sessao = await sessaoAtual();
   if (!sessao) {
     return NextResponse.json({ erro: "não autenticado" }, { status: 401 });
