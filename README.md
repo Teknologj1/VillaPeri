@@ -131,8 +131,49 @@ arquivos novos.
 extraídas. Fica **fora de `public/`** de propósito: o que está em `public/` é
 publicado como está, e são 80 MB que ninguém precisa baixar.
 
+## Notificações: como uma mensagem sai
+
+O sistema nunca envia dentro da transação do fato. Ele **enfileira** na tabela
+`notificacao`, junto com a reserva ou o pedido, e a entrega acontece depois —
+se o fato não for gravado, ninguém recebe aviso de algo que não aconteceu.
+
+A entrega tem dois caminhos, e o primeiro é o normal:
+
+1. **Logo depois do fato.** `entregarEmSeguida()` (`src/lib/entregar.ts`) usa
+   o `after()` do Next: a resposta sai na hora e a fila é drenada em seguida,
+   na mesma invocação. Quem acabou de pedir uma reserva recebe a confirmação
+   em segundos, e não espera o e-mail sair para ver a página de confirmação.
+
+2. **A varredura diária.** `/api/cron/notificacoes` recolhe o que falhou —
+   provedor fora do ar, variável que faltava, invocação que morreu no meio.
+
+> **O cron é diário porque o plano Hobby da Vercel só aceita cron diário.**
+> Qualquer coisa mais frequente faz o **build falhar**, não apenas ser
+> ignorada. Já aconteceu uma vez, com `*/10 * * * *`. Para drenar de hora em
+> hora é preciso o plano Pro — ou um agendador externo chamando a rota com o
+> `CRON_SECRET`.
+
+Como há dois drenadores, a fila **reserva** a linha antes de enviar: o
+`select ... for update` + `update` para `enviando`, na mesma transação,
+decidem quem é o dono daquele envio. Sem isso os dois pegariam a mesma
+mensagem pendente e o hóspede receberia a confirmação em dobro. Uma linha
+presa em `enviando` volta à fila depois de cinco minutos, para o caso de o
+drenador morrer no meio.
+
+Sem provedor configurado, a mensagem fica **pendente** — nunca é marcada como
+enviada. Fingir que saiu é o pior resultado possível: o hóspede não recebe e
+ninguém fica sabendo.
+
 ## Documentação
 
 A especificação funcional completa (escopo, perfis, fluxos, regras de tarifa,
 RIIA, marketplace e roadmap em fases) está no documento do projeto. Este
 repositório implementa a **Fase 1A**: núcleo e site.
+
+Para a integração com a secretária de IA:
+
+- [`docs/integracao-riia.md`](docs/integracao-riia.md) — a API que a RIIA
+  chama: as dez ferramentas, chave, escopos, níveis e idempotência.
+- [`docs/envios-para-a-riia.md`](docs/envios-para-a-riia.md) — o caminho
+  inverso: o endpoint que a RIIA precisa construir para receber as mensagens
+  que o sistema manda ao hóspede.

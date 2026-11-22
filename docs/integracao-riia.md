@@ -292,8 +292,10 @@ const esperado = crypto
   .digest("hex");
 ```
 
-Enquanto essas variáveis não existirem, as mensagens ficam **pendentes** na
-fila do sistema — não são descartadas nem marcadas como enviadas.
+A mensagem sai logo depois do fato que a origina. Uma varredura diária
+recolhe o que tiver falhado, tentando até cinco vezes. Enquanto essas
+variáveis não existirem, as mensagens ficam **pendentes** na fila — não são
+descartadas nem marcadas como enviadas.
 
 **O detalhamento deste lado está em `docs/envios-para-a-riia.md`**: o contrato
 completo do endpoint, exemplos de validação da assinatura em Node, PHP e

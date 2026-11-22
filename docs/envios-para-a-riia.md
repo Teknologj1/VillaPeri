@@ -259,8 +259,11 @@ antes de ligarmos em produção.
 Casa única, locada inteira. Na prática:
 
 - **Algumas dezenas de mensagens por mês.** Não há pico de carga.
-- A fila é drenada a cada **10 minutos**, em lotes de até 25.
-- Nunca mandamos mais de uma requisição por vez.
+- A mensagem sai **logo depois do fato** que a origina — em segundos, não em
+  lotes de horário.
+- Uma varredura diária recolhe o que tiver falhado, em lotes de até 25.
+- Raramente mandamos mais de uma requisição por vez, mas pode acontecer. O
+  `id` da seção 2 é o que garante que isso não vire mensagem repetida.
 
 Se por qualquer motivo isso mudar (mais casas no sistema), avisamos antes.
 

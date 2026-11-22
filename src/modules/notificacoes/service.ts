@@ -1,4 +1,4 @@
-import { and, asc, eq, lt } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 
 import { type Tx, withTenant } from "@/db/tenant";
 
@@ -62,11 +62,28 @@ export type ResultadoDaDrenagem = {
 };
 
 /**
+ * Quanto tempo uma linha pode ficar reservada antes de voltar à fila.
+ *
+ * É o destravamento: se o drenador morrer no meio do envio, a linha fica em
+ * `enviando` para sempre. Passado este prazo ela volta a ser elegível — a
+ * mensagem atrasa, em vez de nunca mais sair.
+ *
+ * Folgado de propósito. Curto demais e uma entrega lenta seria reenviada
+ * enquanto a primeira ainda está em curso, que é justamente o que a reserva
+ * existe para impedir.
+ */
+const MINUTOS_DE_RESERVA = 5;
+
+/**
  * Tenta entregar o que está na fila.
  *
- * Chamada por tarefa agendada e, se quiser, pelo painel. O envio acontece
- * FORA de transação: é chamada de rede, e segurar uma transação aberta
- * enquanto se espera um provedor externo prende conexão do banco à toa.
+ * Chamada pela tarefa agendada e logo depois do fato que origina a mensagem
+ * — o hóspede não pode esperar a próxima passada do cron para receber a
+ * confirmação da reserva.
+ *
+ * O envio acontece FORA de transação: é chamada de rede, e segurar uma
+ * transação aberta enquanto se espera um provedor externo prende conexão do
+ * banco à toa.
  *
  * Sem provedor configurado para o canal, a mensagem continua pendente — não
  * é marcada como enviada nem descartada. Fingir que saiu é o pior resultado:
@@ -76,19 +93,7 @@ export async function drenarFila(
   anfitriaoId: string,
   limite = 25,
 ): Promise<ResultadoDaDrenagem> {
-  const pendentes = await withTenant(anfitriaoId, (tx) =>
-    tx
-      .select()
-      .from(notificacao)
-      .where(
-        and(
-          eq(notificacao.status, "pendente"),
-          lt(notificacao.tentativas, MAXIMO_DE_TENTATIVAS),
-        ),
-      )
-      .orderBy(asc(notificacao.criadoEm))
-      .limit(limite),
-  );
+  const pendentes = await reservarLote(anfitriaoId, limite);
 
   const resultado: ResultadoDaDrenagem = {
     enviadas: 0,
@@ -118,7 +123,7 @@ export async function drenarFila(
         assunto: m.assunto,
         corpo: m.corpo,
         evento: m.evento,
-        tentativa: m.tentativas + 1,
+        tentativa: m.tentativas,
         referenciaTipo: m.referenciaTipo,
         referenciaId: m.referenciaId,
       });
@@ -129,25 +134,27 @@ export async function drenarFila(
           .set({
             status: "enviada",
             enviadaEm: new Date(),
-            tentativas: m.tentativas + 1,
             ultimoErro: null,
+            reservadaEm: null,
           })
           .where(eq(notificacao.id, m.id)),
       );
       resultado.enviadas++;
     } catch (erro) {
-      const tentativas = m.tentativas + 1;
+      // `tentativas` já foi incrementado ao reservar o lote: é o que impede
+      // uma mensagem que derruba o processo de ser tentada para sempre.
       const texto = erro instanceof Error ? erro.message : String(erro);
 
       await withTenant(anfitriaoId, (tx) =>
         tx
           .update(notificacao)
           .set({
-            // Só desiste ao esgotar as tentativas; antes disso continua na
-            // fila para a próxima passada.
-            status: tentativas >= MAXIMO_DE_TENTATIVAS ? "falhou" : "pendente",
-            tentativas,
+            // Só desiste ao esgotar as tentativas; antes disso volta para a
+            // fila, para a próxima passada.
+            status:
+              m.tentativas >= MAXIMO_DE_TENTATIVAS ? "falhou" : "pendente",
             ultimoErro: texto.slice(0, 500),
+            reservadaEm: null,
           })
           .where(eq(notificacao.id, m.id)),
       );
@@ -184,4 +191,66 @@ export async function notificacoesDe(
       ),
     )
     .orderBy(asc(notificacao.criadoEm));
+}
+
+/**
+ * Toma para si um lote de mensagens, antes de enviar qualquer uma.
+ *
+ * Esta é a peça que permite mais de um drenador. "Seleciona pendentes,
+ * envia, marca como enviada" funciona com um drenador e manda a mesma
+ * mensagem duas vezes com dois: ambos selecionam a mesma linha antes de
+ * qualquer um marcá-la.
+ *
+ * São dois passos na MESMA transação, e é a transação que os torna atômicos:
+ * o `select ... for update` trava as linhas escolhidas, e o `update` as
+ * marca como `enviando` antes de qualquer envio. Quem comita primeiro leva;
+ * o outro só enxerga linhas que já não estão pendentes.
+ *
+ * O `skip locked` não é o que garante isso — a correção vem da troca de
+ * status dentro da transação, e sem ele os testes de concorrência passam
+ * igual. Ele é escolha de VAZÃO: o segundo drenador pula o que está travado
+ * e leva outras mensagens, em vez de ficar parado esperando a transação do
+ * primeiro terminar.
+ *
+ * `tentativas` é incrementado AQUI, ao reservar, e não ao falhar. É o que
+ * impede uma mensagem que derruba o processo no meio do envio de ser tentada
+ * para sempre: ela conta a tentativa mesmo que ninguém registre o resultado.
+ */
+async function reservarLote(
+  anfitriaoId: string,
+  limite: number,
+): Promise<(typeof notificacao.$inferSelect)[]> {
+  return withTenant(anfitriaoId, async (tx) => {
+    const candidatas = await tx.execute<{ id: string }>(sql`
+      select id from notificacao
+       where tentativas < ${MAXIMO_DE_TENTATIVAS}
+         and (
+           status = 'pendente'
+           or (
+             status = 'enviando'
+             and reservada_em < now() - make_interval(mins => ${MINUTOS_DE_RESERVA})
+           )
+         )
+       order by criado_em
+       limit ${limite}
+       for update skip locked
+    `);
+
+    if (candidatas.length === 0) return [];
+
+    return tx
+      .update(notificacao)
+      .set({
+        status: "enviando",
+        reservadaEm: new Date(),
+        tentativas: sql`${notificacao.tentativas} + 1`,
+      })
+      .where(
+        inArray(
+          notificacao.id,
+          candidatas.map((c) => c.id),
+        ),
+      )
+      .returning();
+  });
 }

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { withTenant } from "@/db/tenant";
 import { env } from "@/env";
 import { comoNoite, hojeNaPropriedade } from "@/lib/data";
+import { entregarEmSeguida } from "@/lib/entregar";
 import { centavosDeTexto, formatarReais } from "@/lib/dinheiro";
 import { exigirSessao } from "@/lib/sessao";
 import { podeNoModulo } from "@/modules/autenticacao";
@@ -76,6 +77,10 @@ export async function mudarStatusDaReserva(
     });
 
     if (!resultado) return { erro: "Reserva não encontrada." };
+
+    // A confirmação avisa o hóspede por e-mail e WhatsApp. Sai agora, não na
+    // próxima passada do cron.
+    if (para === "confirmada") entregarEmSeguida(sessao.anfitriaoId);
 
     revalidatePath(`/painel/reservas/${codigo}`);
     revalidatePath("/painel/reservas");
@@ -220,6 +225,10 @@ export async function acaoDaFnrh(
     });
 
     if (!resultado) return { erro: "Reserva não encontrada." };
+
+    // O link da ficha vai ao hóspede agora: a recepção clicou justamente
+    // para que ele chegue.
+    if (acao === "enviar") entregarEmSeguida(sessao.anfitriaoId);
 
     revalidatePath(`/painel/reservas/${codigo}`);
     revalidatePath("/painel/reservas");

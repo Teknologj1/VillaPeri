@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { withTenant } from "@/db/tenant";
 import { anfitriaoDaCasa } from "@/lib/anfitriao-publico";
+import { entregarEmSeguida } from "@/lib/entregar";
 import { comoNoite } from "@/lib/data";
 import { contarSolicitacoesRecentes, criarSolicitacao } from "@/modules/reservas";
 
@@ -90,6 +91,10 @@ export async function solicitarReserva(
         "Você já enviou alguns pedidos na última hora. Fale com a gente direto no WhatsApp.",
     };
   }
+
+  // Os avisos saem logo depois da resposta, não na próxima passada do cron:
+  // quem acabou de pedir espera a confirmação em minutos, não em horas.
+  entregarEmSeguida(anfitriaoId);
 
   redirect(`/reservar/enviado?codigo=${encodeURIComponent(codigo)}`);
 }

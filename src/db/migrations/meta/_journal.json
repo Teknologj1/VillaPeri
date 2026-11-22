@@ -141,6 +141,13 @@
       "when": 1795369169651,
       "tag": "0019_saida_antecipada",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795384401274,
+      "tag": "0020_fila_com_reserva",
+      "breakpoints": true
     }
   ]
 }
