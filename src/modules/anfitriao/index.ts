@@ -6,6 +6,8 @@
  * por serviços, nunca lendo a tabela do vizinho" como fato e não como intenção.
  */
 export {
+  type Anfitriao,
+  buscarAnfitriao,
   buscarPerfilComPermissoes,
   buscarPropriedade,
   buscarTipoPorSlug,

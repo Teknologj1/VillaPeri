@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import type { Tx } from "@/db/tenant";
 
 import {
+  anfitriao,
   moduloSistema,
   type nivelPermissao,
   perfil,
@@ -56,9 +57,26 @@ export async function buscarPerfilComPermissoes(
   };
 }
 
+export type Anfitriao = typeof anfitriao.$inferSelect;
 export type Propriedade = typeof propriedade.$inferSelect;
 export type TipoAcomodacao = typeof tipoAcomodacao.$inferSelect;
 export type Unidade = typeof unidade.$inferSelect;
+
+/**
+ * A conta em si — razão social, documento, Cadastur.
+ *
+ * Lida sob o contexto do anfitrião, como tudo: a política da tabela compara
+ * `id` com o contexto, e não `anfitriao_id`, porque aqui o anfitrião é a raiz
+ * e não um filho. Quem precisa disto é o recibo, que sem CNPJ ou CPF não vale
+ * como comprovante.
+ */
+export async function buscarAnfitriao(tx: Tx): Promise<Anfitriao> {
+  const [a] = await tx.select().from(anfitriao).limit(1);
+  if (!a) {
+    throw new Error("Contexto de anfitrião não definido, ou conta inexistente.");
+  }
+  return a;
+}
 
 /**
  * A propriedade do anfitrião em curso.

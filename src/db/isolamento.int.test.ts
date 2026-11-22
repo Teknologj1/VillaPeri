@@ -125,6 +125,24 @@ describe("leitura", () => {
     expect(linhas).toEqual([]);
   });
 
+  it("a própria tabela de contas também é isolada", async () => {
+    // `anfitriao` é a RAIZ: a política dela compara `id` com o contexto, não
+    // `anfitriao_id`. Uma política escrita por hábito, com `anfitriao_id`,
+    // não existiria nesta tabela — e a conta inteira (documento, Cadastur,
+    // conta de recebimento) ficaria legível por qualquer outro anfitrião. O
+    // recibo lê esta tabela, então vale provar.
+    const comoA = await withTenant(anfitriaoA, (tx) =>
+      tx.select().from(anfitriao),
+    );
+    expect(comoA).toHaveLength(1);
+    expect(comoA[0]?.id).toBe(anfitriaoA);
+
+    const tentandoB = await withTenant(anfitriaoA, (tx) =>
+      tx.select().from(anfitriao).where(eq(anfitriao.id, anfitriaoB)),
+    );
+    expect(tentandoB).toEqual([]);
+  });
+
   it("sem contexto nenhum, não enxerga nada — e não quebra", async () => {
     // O `nullif` nas políticas é o que faz isto devolver zero linhas em vez de
     // "invalid input syntax for type uuid": current_setting devolve string

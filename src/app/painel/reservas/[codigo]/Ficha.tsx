@@ -345,6 +345,17 @@ export async function Ficha({ codigo }: { codigo: string }) {
           </ul>
         )}
 
+        {ficha.pagamentos.length > 0 && (
+          <p className="mt-4">
+            <a
+              href={`/painel/reservas/${r.codigo}/recibo`}
+              className="inline-block rounded-full border border-borda px-5 py-2.5 text-sm font-medium transition-colors hover:border-vinho/40"
+            >
+              Baixar recibo em PDF
+            </a>
+          </p>
+        )}
+
         {podeNoModulo(sessao, "reservas", "lancar") ? (
           <FormularioDePagamento
             codigo={r.codigo}
