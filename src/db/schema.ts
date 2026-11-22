@@ -15,3 +15,5 @@ export * from "@/modules/autenticacao/schema-membro";
 export * from "@/modules/auditoria/schema";
 export * from "@/modules/calendario/schema";
 export * from "@/modules/tarifas/schema";
+export * from "@/modules/reservas/schema";
+export * from "@/modules/notificacoes/schema";

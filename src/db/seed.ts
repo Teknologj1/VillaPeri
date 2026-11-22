@@ -421,6 +421,11 @@ async function semear() {
       checkoutPadrao: ESTADIA.checkout,
       sinalPontosBase: TARIFA.sinalPontosBase,
       aceitaPets: false,
+      // Para onde vão os avisos de pedido e de reserva confirmada. Vêm do
+      // ambiente só para semear; depois o proprietário troca pelo painel,
+      // porque é dado do anfitrião e não configuração de deploy.
+      emailContato: process.env.EMAIL_ANFITRIAO ?? null,
+      whatsappContato: process.env.NEXT_PUBLIC_WHATSAPP ?? null,
     })
     .where(eq(propriedade.id, prop.id));
 

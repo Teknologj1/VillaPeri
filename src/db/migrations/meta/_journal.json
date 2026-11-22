@@ -92,6 +92,20 @@
       "when": 1795263220027,
       "tag": "0012_politica_membro_usuario",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795267620434,
+      "tag": "0013_reservas_e_notificacoes",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795347376758,
+      "tag": "0014_forcar_rls_reservas",
+      "breakpoints": true
     }
   ]
 }

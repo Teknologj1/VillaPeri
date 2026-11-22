@@ -199,6 +199,17 @@ export const propriedade = pgTable(
     /** Sinal cobrado no ato da reserva, em pontos-base. 3000 = 30%. */
     sinalPontosBase: integer("sinal_pontos_base").notNull().default(3000),
 
+    /**
+     * Para onde vão os avisos destinados ao anfitrião.
+     *
+     * No banco, e não em variável de ambiente, porque é dado do anfitrião: no
+     * marketplace cada um terá o seu, e o proprietário precisa poder trocar
+     * pelo painel sem um deploy.
+     */
+    emailContato: text("email_contato"),
+    /** Formato internacional, só dígitos: 55 + DDD + número. */
+    whatsappContato: text("whatsapp_contato"),
+
     /** Se a propriedade aceita animais de estimação. */
     aceitaPets: boolean("aceita_pets").notNull().default(false),
   },
