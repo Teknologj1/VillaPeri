@@ -4,6 +4,7 @@ import { and, count, eq, gte } from "drizzle-orm";
 
 import type { Tx } from "@/db/tenant";
 import { type Noite, diferencaEmDias, noitesDaEstadia } from "@/lib/data";
+import { apenasDigitos } from "@/lib/telefone";
 import { buscarPropriedade, listarTipos } from "@/modules/anfitriao";
 import { type Autor, auditar } from "@/modules/auditoria";
 import { NoiteIndisponivelError, liberarNoitesPorOrigem, ocuparNoites } from "@/modules/calendario";
@@ -217,11 +218,6 @@ export async function contarSolicitacoesRecentes(
   return linha?.total ?? 0;
 }
 
-/** O WhatsApp quer só dígitos; o hóspede digita com parênteses e traço. */
-function apenasDigitos(texto: string): string {
-  return texto.replace(/\D/g, "");
-}
-
 // ---------------------------------------------------------------------------
 // Reserva
 // ---------------------------------------------------------------------------
@@ -420,6 +416,83 @@ async function acharOuCriarHospede(
 
   if (!novo) throw new Error("Não foi possível criar a ficha do hóspede.");
   return novo;
+}
+
+// ---------------------------------------------------------------------------
+// Pagamentos
+// ---------------------------------------------------------------------------
+
+export type DadosDoPagamento = {
+  reservaId: string;
+  tipo: "sinal" | "saldo" | "extra" | "reembolso";
+  metodo: "pix" | "cartao" | "dinheiro" | "transferencia" | "outro";
+  /** Em centavos. Reembolso entra NEGATIVO. */
+  valorCentavos: number;
+  data: Noite;
+  comprovante?: string | null;
+  observacao?: string | null;
+  autor: Autor;
+};
+
+/**
+ * Lança um pagamento na reserva.
+ *
+ * Na v1 é lançamento manual — Pix, cartão, dinheiro, transferência. Na fase 3
+ * o provedor confirma por webhook e cai nesta mesma tabela, pela mesma função:
+ * é o ponto de extensão que evita reescrever a tela de financeiro depois.
+ *
+ * Não muda o status da reserva. Receber o sinal e confirmar são duas decisões
+ * distintas: o dinheiro pode cair antes de a recepção checar a data, e a
+ * confirmação pode ser dada por telefone antes de o Pix aparecer no extrato.
+ * Juntar as duas coisas aqui tiraria da recepção o controle de uma delas.
+ */
+export async function registrarPagamento(
+  tx: Tx,
+  anfitriaoId: string,
+  dados: DadosDoPagamento,
+) {
+  if (!Number.isInteger(dados.valorCentavos) || dados.valorCentavos === 0) {
+    throw new Error("Valor do pagamento tem de ser inteiro em centavos e não zero.");
+  }
+  if (dados.tipo === "reembolso" && dados.valorCentavos > 0) {
+    throw new Error("Reembolso entra com valor negativo.");
+  }
+  if (dados.tipo !== "reembolso" && dados.valorCentavos < 0) {
+    throw new Error("Só reembolso entra com valor negativo.");
+  }
+
+  const [criado] = await tx
+    .insert(pagamento)
+    .values({
+      anfitriaoId,
+      reservaId: dados.reservaId,
+      tipo: dados.tipo,
+      metodo: dados.metodo,
+      valorCentavos: dados.valorCentavos,
+      data: dados.data,
+      comprovante: dados.comprovante ?? null,
+      observacao: dados.observacao ?? null,
+    })
+    .returning();
+
+  if (!criado) throw new Error("Não foi possível lançar o pagamento.");
+
+  await auditar(tx, {
+    anfitriaoId,
+    entidade: "pagamento",
+    entidadeId: criado.id,
+    acao: "lancou",
+    valorDepois: {
+      reservaId: dados.reservaId,
+      tipo: dados.tipo,
+      metodo: dados.metodo,
+      valorCentavos: dados.valorCentavos,
+      data: dados.data,
+    },
+    autor: dados.autor,
+  });
+
+  return criado;
 }
 
 // ---------------------------------------------------------------------------

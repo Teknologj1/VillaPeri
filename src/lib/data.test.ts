@@ -5,6 +5,10 @@ import {
   diaDaSemana,
   diferencaEmDias,
   ehNoiteDeFimDeSemana,
+  formatarInstante,
+  formatarNoite,
+  formatarNoiteCurta,
+  formatarPeriodo,
   hojeNaPropriedade,
   horasAteCheckin,
   instanteNaPropriedade,
@@ -164,5 +168,43 @@ describe("comoNoite", () => {
     expect(() => comoNoite("2026-12-25T10:00:00Z")).toThrow();
     expect(() => comoNoite("2026-13-01")).toThrow();
     expect(() => comoNoite("")).toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe("como a data aparece na tela", () => {
+  it("formata a noite sem passar por Date, para não perder o dia", () => {
+    // 2026-12-11 formatado no fuso do servidor (UTC-3 ou qualquer um a oeste)
+    // viraria 10/12. A noite é uma string sem fuso: só se recorta.
+    expect(formatarNoite("2026-12-11")).toBe("11/12/2026");
+    expect(formatarNoite("2026-01-01")).toBe("01/01/2026");
+    expect(formatarNoite("2026-12-11", false)).toBe("11/12");
+  });
+
+  it("acerta o dia da semana — 0 é domingo", () => {
+    // 11/12/2026 é uma sexta-feira.
+    expect(formatarNoiteCurta("2026-12-11")).toBe("sex, 11 dez");
+    // 13/12/2026 é domingo: o índice 0 da lista.
+    expect(formatarNoiteCurta("2026-12-13")).toBe("dom, 13 dez");
+    expect(formatarNoiteCurta("2026-12-12")).toBe("sáb, 12 dez");
+  });
+
+  it("conta as noites do período, com o plural certo", () => {
+    expect(formatarPeriodo("2026-12-11", "2026-12-14")).toBe(
+      "11/12/2026 a 14/12/2026 · 3 noites",
+    );
+    expect(formatarPeriodo("2026-12-11", "2026-12-12")).toBe(
+      "11/12/2026 a 12/12/2026 · 1 noite",
+    );
+  });
+
+  it("formata o instante no fuso da propriedade, não no do servidor", () => {
+    // 23h de Brasília é 02h do dia seguinte em UTC. Quem formatar em UTC
+    // mostra a data errada no registro de auditoria.
+    const instante = new Date("2026-12-12T02:30:00Z");
+    expect(formatarInstante(instante, "America/Sao_Paulo")).toBe(
+      "11/12/2026, 23:30",
+    );
   });
 });

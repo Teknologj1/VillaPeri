@@ -5,7 +5,10 @@ import { CASA } from "@/modules/conteudo";
 
 const LINKS = [
   { href: "/painel", texto: "Início" },
-  { href: "/painel/simulador", texto: "Simulador de tarifa" },
+  { href: "/painel/hoje", texto: "Hoje na casa" },
+  { href: "/painel/reservas", texto: "Reservas" },
+  { href: "/painel/hospedes", texto: "Hóspedes" },
+  { href: "/painel/simulador", texto: "Tarifas" },
 ];
 
 export default function LayoutDoPainel({ children }: LayoutProps<"/painel">) {
@@ -23,9 +26,11 @@ export default function LayoutDoPainel({ children }: LayoutProps<"/painel">) {
             />
             <span className="font-display text-lg text-vinho">{CASA.nome}</span>
           </Link>
+          {/* Rola na horizontal no celular em vez de quebrar em duas linhas:
+              a recepção usa isto em pé, com uma mão. */}
           <nav
             aria-label="Painel"
-            className="flex gap-4 text-sm text-tinta-suave"
+            className="-mx-1 flex gap-4 overflow-x-auto px-1 text-sm whitespace-nowrap text-tinta-suave"
           >
             {LINKS.map((l) => (
               <Link key={l.href} href={l.href} className="hover:text-vinho">

@@ -46,3 +46,37 @@ export function formatarReais(centavos: number): string {
     currency: "BRL",
   }).format(centavos / 100);
 }
+
+/**
+ * O caminho de volta: o que a pessoa digitou, em centavos inteiros.
+ *
+ * Aceita as duas escritas que aparecem de verdade — "1.234,56", do teclado
+ * brasileiro, e "1234.56", de quem copia de planilha — e devolve `null` para
+ * o que não é valor, em vez de um `NaN` que seguiria adiante e gravaria lixo.
+ *
+ * Monta o inteiro pelos pedaços e nunca por float: `parseFloat("0.07") * 100`
+ * dá 7.000000000000001, e um centavo errado por lançamento vira discussão no
+ * fechamento do mês.
+ */
+export function centavosDeTexto(texto: string): number | null {
+  const limpo = texto.replace(/\s|R\$/g, "");
+  if (limpo === "" || limpo === "-") return null;
+
+  // Só trata como escrita brasileira quando o ponto está de fato separando
+  // milhares. "1.5" é um e meio para quem copiou de planilha, não mil e
+  // quinhentos — e tratar os dois casos pela mesma regra erraria um deles.
+  const comMilhar = /^-?\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(limpo);
+  const comVirgula = limpo.includes(",");
+  const normalizado = comMilhar
+    ? limpo.replace(/\./g, "").replace(",", ".")
+    : comVirgula
+      ? limpo.replace(",", ".")
+      : limpo;
+
+  if (!/^-?\d+(\.\d{1,2})?$/.test(normalizado)) return null;
+
+  const negativo = normalizado.startsWith("-");
+  const [inteira = "0", decimal = ""] = normalizado.replace("-", "").split(".");
+  const centavos = Number(inteira) * 100 + Number(decimal.padEnd(2, "0"));
+  return negativo ? -centavos : centavos;
+}

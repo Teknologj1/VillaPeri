@@ -9,6 +9,7 @@ import {
   exigirTransicao,
   podeIrPara,
   seguraNoites,
+  vencida,
 } from "./status";
 
 const TODOS: StatusReserva[] = [
@@ -149,6 +150,54 @@ describe("devolução ao cancelar", () => {
       const r = devolucaoAoCancelar(faixas, 1, pago);
       expect(Number.isInteger(r.devolverCentavos)).toBe(true);
       expect(r.devolverCentavos).toBeLessThanOrEqual(pago);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe("vencida", () => {
+  const AGORA = new Date("2026-11-22T15:00:00Z");
+
+  it("vence quando o prazo passou e a reserva ainda não foi confirmada", () => {
+    expect(
+      vencida(
+        { status: "pre_reserva", expiraEm: new Date("2026-11-22T14:59:00Z") },
+        AGORA,
+      ),
+    ).toBe(true);
+    expect(
+      vencida(
+        {
+          status: "aguardando_aprovacao",
+          expiraEm: new Date("2026-11-20T10:00:00Z"),
+        },
+        AGORA,
+      ),
+    ).toBe(true);
+  });
+
+  it("não vence antes do prazo", () => {
+    expect(
+      vencida(
+        { status: "pre_reserva", expiraEm: new Date("2026-11-22T15:01:00Z") },
+        AGORA,
+      ),
+    ).toBe(false);
+  });
+
+  it("não vence sem prazo", () => {
+    expect(vencida({ status: "pre_reserva", expiraEm: null }, AGORA)).toBe(false);
+  });
+
+  it("reserva confirmada não vence, mesmo com prazo antigo na coluna", () => {
+    // A confirmação limpa o `expiraEm`, mas a regra não pode depender disso:
+    // uma linha antiga, ou um dado importado, deixaria a reserva paga
+    // aparecendo como vencida no painel.
+    for (const status of ["confirmada", "hospedado", "concluida", "cancelada", "no_show"] as const) {
+      expect(
+        vencida({ status, expiraEm: new Date("2020-01-01T00:00:00Z") }, AGORA),
+      ).toBe(false);
     }
   });
 });

@@ -17,6 +17,7 @@ export {
   exigirTransicao,
   podeIrPara,
   seguraNoites,
+  vencida,
 } from "./status";
 
 export {
@@ -45,10 +46,12 @@ export {
 export {
   type DadosDaReservaNova,
   type DadosDaSolicitacaoNova,
+  type DadosDoPagamento,
   type ResultadoDaMudanca,
   NoiteIndisponivelError,
   contarSolicitacoesRecentes,
   criarReserva,
   criarSolicitacao,
   mudarStatus,
+  registrarPagamento,
 } from "./service";

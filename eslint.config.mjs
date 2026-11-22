@@ -16,6 +16,11 @@ const eslintConfig = defineConfig([
     //
     // Dentro do próprio módulo usa-se import relativo ("./repo"), que esta
     // regra não alcança — de propósito.
+    //
+    // A única exceção é `@/modules/x/cliente`: a porta do que é puro e pode
+    // viajar para o navegador. Existe porque o índice exporta o serviço, que
+    // importa o driver do Postgres — e um componente de cliente que importe
+    // dali leva o banco inteiro para o pacote do navegador.
     files: ["src/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
@@ -23,9 +28,9 @@ const eslintConfig = defineConfig([
         {
           patterns: [
             {
-              group: ["@/modules/*/*"],
+              group: ["@/modules/*/*", "!@/modules/*/cliente"],
               message:
-                "Importe o índice do módulo (@/modules/x), nunca um arquivo interno dele. Precisa de algo que o índice não exporta? Exporte pelo serviço.",
+                "Importe o índice do módulo (@/modules/x), nunca um arquivo interno dele. Precisa de algo que o índice não exporta? Exporte pelo serviço. De dentro de um componente de cliente, use @/modules/x/cliente.",
             },
             {
               group: ["@/db/client"],

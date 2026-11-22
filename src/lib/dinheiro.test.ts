@@ -4,6 +4,7 @@ import {
   ajustar,
   aplicarPercentual,
   arredondarCentavos,
+  centavosDeTexto,
   formatarReais,
 } from "./dinheiro";
 
@@ -75,5 +76,52 @@ describe("formatarReais", () => {
     //   é o espaço não separável que o Intl usa depois do "R$".
     expect(formatarReais(123_456)).toBe("R$ 1.234,56");
     expect(formatarReais(0)).toBe("R$ 0,00");
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe("centavosDeTexto", () => {
+  it("lê o que a recepção digita no teclado brasileiro", () => {
+    expect(centavosDeTexto("1.234,56")).toBe(123_456);
+    expect(centavosDeTexto("543")).toBe(54_300);
+    expect(centavosDeTexto("543,00")).toBe(54_300);
+    expect(centavosDeTexto("1.500")).toBe(150_000);
+    expect(centavosDeTexto("R$ 1.375,00")).toBe(137_500);
+    expect(centavosDeTexto(" 110 ")).toBe(11_000);
+  });
+
+  it("lê também o que vem copiado de planilha", () => {
+    expect(centavosDeTexto("1234.56")).toBe(123_456);
+    expect(centavosDeTexto("0.07")).toBe(7);
+    // Em float isto daria 7.000000000000001.
+    expect(Number.isInteger(centavosDeTexto("0.07"))).toBe(true);
+  });
+
+  it("não confunde um ponto decimal com separador de milhar", () => {
+    // Quem copia "1.5" de planilha quer um e meio, não mil e quinhentos.
+    expect(centavosDeTexto("1.5")).toBe(150);
+    expect(centavosDeTexto("1.50")).toBe(150);
+    // Com três casas depois do ponto, é milhar.
+    expect(centavosDeTexto("1.500")).toBe(150_000);
+    expect(centavosDeTexto("1.234.567")).toBe(123_456_700);
+  });
+
+  it("aceita negativo, que é como o reembolso entra", () => {
+    expect(centavosDeTexto("-300,00")).toBe(-30_000);
+    expect(centavosDeTexto("-0.01")).toBe(-1);
+  });
+
+  it("devolve null para o que não é valor, em vez de NaN", () => {
+    // NaN seguiria adiante e gravaria lixo na tabela de pagamentos.
+    for (const lixo of ["", " ", "-", "abc", "1,234,56", "1.2.3", "12,345", "R$"]) {
+      expect(centavosDeTexto(lixo)).toBeNull();
+    }
+  });
+
+  it("ida e volta com formatarReais", () => {
+    for (const centavos of [0, 1, 7, 54_300, 137_500, 150_000, 123_456]) {
+      expect(centavosDeTexto(formatarReais(centavos))).toBe(centavos);
+    }
   });
 });

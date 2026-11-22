@@ -98,6 +98,25 @@ export function exigirTransicao(de: StatusReserva, para: StatusReserva): void {
   if (!podeIrPara(de, para)) throw new TransicaoInvalidaError(de, para);
 }
 
+/**
+ * Se a pré-reserva já passou do prazo.
+ *
+ * Pura e com o instante recebido de fora, porque a regra é "tratado como
+ * vencido NA LEITURA": quem lê decide quando é agora, e o teste decide sem
+ * mexer no relógio. A tarefa agendada só faz a limpeza — nenhuma regra de
+ * correção depende de ela ter rodado no minuto certo.
+ */
+export function vencida(
+  reserva: { status: StatusReserva; expiraEm: Date | null },
+  agora: Date,
+): boolean {
+  if (reserva.expiraEm === null) return false;
+  if (reserva.status !== "pre_reserva" && reserva.status !== "aguardando_aprovacao") {
+    return false;
+  }
+  return reserva.expiraEm.getTime() < agora.getTime();
+}
+
 // ---------------------------------------------------------------------------
 // Como cada status se chama na tela
 // ---------------------------------------------------------------------------

@@ -114,6 +114,67 @@ export function comoNoite(valor: string): Noite {
   return valor;
 }
 
+// ---------------------------------------------------------------------------
+// Como a data aparece na tela
+// ---------------------------------------------------------------------------
+
+const MES_CURTO = [
+  "jan",
+  "fev",
+  "mar",
+  "abr",
+  "mai",
+  "jun",
+  "jul",
+  "ago",
+  "set",
+  "out",
+  "nov",
+  "dez",
+] as const;
+
+const DIA_CURTO = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"] as const;
+
+/**
+ * A noite em dia/mês/ano, como se escreve no Brasil.
+ *
+ * Feito à mão em vez de `Intl` ou `toLocaleDateString` porque a noite é uma
+ * string sem fuso: passá-la por `new Date()` e formatar no fuso do servidor
+ * devolve o dia anterior em qualquer fuso a oeste de Greenwich. Aqui os
+ * pedaços da string são recortados e não há conversão nenhuma para errar.
+ */
+export function formatarNoite(noite: Noite, comAno = true): string {
+  const [ano, mes, dia] = noite.split("-");
+  return comAno ? `${dia}/${mes}/${ano}` : `${dia}/${mes}`;
+}
+
+/** "sex, 11 dez" — para listas em que o dia da semana importa. */
+export function formatarNoiteCurta(noite: Noite): string {
+  const [, mes, dia] = noite.split("-");
+  const semana = DIA_CURTO[diaDaSemana(noite)];
+  return `${semana}, ${dia} ${MES_CURTO[Number(mes) - 1]}`;
+}
+
+/** "11/12/2026 a 14/12/2026 · 3 noites" */
+export function formatarPeriodo(entrada: Noite, saida: Noite): string {
+  const n = noitesDaEstadia(entrada, saida).length;
+  return `${formatarNoite(entrada)} a ${formatarNoite(saida)} · ${n} ${
+    n === 1 ? "noite" : "noites"
+  }`;
+}
+
+/** Data e hora no fuso da propriedade, para registros de auditoria. */
+export function formatarInstante(instante: Date, fuso: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: fuso,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(instante);
+}
+
 /** Deslocamento do fuso, em minutos, no instante dado. */
 function deslocamentoEmMinutos(fuso: string, instante: Date): number {
   const partes = new Intl.DateTimeFormat("en-US", {
