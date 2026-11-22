@@ -257,8 +257,21 @@ RIIA_WEBHOOK_SEGREDO=<segredo compartilhado>
 O corpo é:
 
 ```json
-{ "canal": "whatsapp", "telefone": "5562988887777", "nome": "Carla", "texto": "…" }
+{
+  "id": "11111111-2222-3333-4444-555555555555",
+  "canal": "whatsapp",
+  "telefone": "5562988887777",
+  "nome": "Carla",
+  "texto": "…",
+  "evento": "reserva.confirmada",
+  "tentativa": 1,
+  "referencia": { "tipo": "reserva", "id": "…" }
+}
 ```
+
+O `id` é o mesmo em toda tentativa da mesma mensagem: guarde-o e descarte
+repetição, senão uma entrega que deu tempo esgotado depois de já ter sido
+mandada no WhatsApp faz o hóspede receber duas vezes.
 
 E vai assinado:
 
@@ -281,6 +294,11 @@ const esperado = crypto
 
 Enquanto essas variáveis não existirem, as mensagens ficam **pendentes** na
 fila do sistema — não são descartadas nem marcadas como enviadas.
+
+**O detalhamento deste lado está em `docs/envios-para-a-riia.md`**: o contrato
+completo do endpoint, exemplos de validação da assinatura em Node, PHP e
+Python, o que responder em cada caso, e a questão da janela de 24 horas da
+Meta, que precisa de decisão antes de ligar em produção.
 
 ---
 

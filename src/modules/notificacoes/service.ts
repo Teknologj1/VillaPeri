@@ -112,10 +112,15 @@ export async function drenarFila(
 
     try {
       await enviador.enviar({
+        id: m.id,
         destinatario: m.destinatario,
         nomeDestinatario: m.nomeDestinatario,
         assunto: m.assunto,
         corpo: m.corpo,
+        evento: m.evento,
+        tentativa: m.tentativas + 1,
+        referenciaTipo: m.referenciaTipo,
+        referenciaId: m.referenciaId,
       });
 
       await withTenant(anfitriaoId, (tx) =>
