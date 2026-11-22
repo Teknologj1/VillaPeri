@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/painel/pedidos", texto: "Pedidos" },
   { href: "/painel/hospedes", texto: "Hóspedes" },
   { href: "/painel/simulador", texto: "Tarifas" },
+  { href: "/painel/riia", texto: "RIIA" },
 ];
 
 export default function LayoutDoPainel({ children }: LayoutProps<"/painel">) {
