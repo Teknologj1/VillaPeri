@@ -36,6 +36,15 @@ const TRANSICOES: Record<StatusReserva, StatusReserva[]> = {
   no_show: [],
 };
 
+/**
+ * Todos os status, derivados da própria tabela de transições.
+ *
+ * Derivado, e não uma segunda lista escrita à mão: acrescentar um status e
+ * esquecer de atualizar a lista paralela é o jeito de uma tela passar a
+ * esconder reservas sem ninguém notar.
+ */
+export const TODOS_OS_STATUS = Object.keys(TRANSICOES) as StatusReserva[];
+
 /** Status que seguram noites no calendário. */
 const SEGURAM_NOITES: StatusReserva[] = [
   "pre_reserva",
@@ -88,6 +97,36 @@ export class TransicaoInvalidaError extends Error {
 export function exigirTransicao(de: StatusReserva, para: StatusReserva): void {
   if (!podeIrPara(de, para)) throw new TransicaoInvalidaError(de, para);
 }
+
+// ---------------------------------------------------------------------------
+// Como cada status se chama na tela
+// ---------------------------------------------------------------------------
+
+/**
+ * O nome que a equipe lê. Fica junto da máquina, e não na página, porque o
+ * PDF da portaria, a lista e a ficha mostram os mesmos status — e um deles
+ * escrito diferente dos outros faz a recepção achar que são coisas diferentes.
+ */
+export const ROTULO_STATUS: Record<StatusReserva, string> = {
+  pre_reserva: "Pré-reserva",
+  aguardando_aprovacao: "Aguardando aprovação",
+  confirmada: "Confirmada",
+  hospedado: "Hospedado",
+  concluida: "Concluída",
+  cancelada: "Cancelada",
+  no_show: "Não compareceu",
+};
+
+/** O verbo do botão que leva a cada status. */
+export const ACAO_PARA: Record<StatusReserva, string> = {
+  pre_reserva: "Voltar para pré-reserva",
+  aguardando_aprovacao: "Enviar para aprovação",
+  confirmada: "Confirmar",
+  hospedado: "Fazer check-in",
+  concluida: "Fazer check-out",
+  cancelada: "Cancelar",
+  no_show: "Marcar não comparecimento",
+};
 
 // ---------------------------------------------------------------------------
 // Cancelamento

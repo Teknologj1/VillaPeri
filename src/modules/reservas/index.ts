@@ -5,6 +5,9 @@
  * mostrar sem perguntar ao banco.
  */
 export {
+  ACAO_PARA,
+  ROTULO_STATUS,
+  TODOS_OS_STATUS,
   type FaixaCancelamento,
   type StatusReserva,
   TransicaoInvalidaError,
@@ -15,6 +18,29 @@ export {
   podeIrPara,
   seguraNoites,
 } from "./status";
+
+export {
+  type FichaDoHospede,
+  type FiltroDeReservas,
+  type HojeNaCasa,
+  type HospedeDaLista,
+  type ReservaCompleta,
+  type ReservaDaLista,
+  buscarHospede,
+  buscarReservaPorCodigo,
+  buscarReservaPorId,
+  buscarSolicitacao,
+  contarSolicitacoesAbertas,
+  hojeNaCasa,
+  listarAcessosAoHospede,
+  listarHospedes,
+  listarReservas,
+  listarSolicitacoes,
+  preReservasVencidas,
+  proximasChegadas,
+  registrarAcessoDadoPessoal,
+  reservasNoPeriodo,
+} from "./consultas";
 
 export {
   type DadosDaReservaNova,
