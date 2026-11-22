@@ -38,6 +38,9 @@ export {
 export {
   type DadosBloqueio,
   type EscopoBloqueio,
+  type PedidoDeSugestao,
+  type Sugestao,
   consultarDisponibilidade,
   fecharDatas,
+  sugerirDatas,
 } from "./service";

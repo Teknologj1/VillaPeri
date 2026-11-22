@@ -4,7 +4,7 @@ import { and, count, eq, gte } from "drizzle-orm";
 
 import type { Tx } from "@/db/tenant";
 import { type Noite, diferencaEmDias, noitesDaEstadia } from "@/lib/data";
-import { apenasDigitos } from "@/lib/telefone";
+import { apenasDigitos, telefoneCanonico } from "@/lib/telefone";
 import { buscarPropriedade, listarTipos } from "@/modules/anfitriao";
 import { type Autor, auditar } from "@/modules/auditoria";
 import { NoiteIndisponivelError, liberarNoitesPorOrigem, ocuparNoites } from "@/modules/calendario";
@@ -382,15 +382,18 @@ async function acharOuCriarHospede(
   }
 
   // Sem documento, o telefone é o melhor identificador que há — é por ele
-  // que a recepção reconhece quem já se hospedou antes.
+  // que a recepção reconhece quem já se hospedou antes. Comparado e guardado
+  // na forma CANÔNICA: o mesmo número escrito de dois jeitos não pode virar
+  // dois hóspedes.
   if (dados.telefone) {
+    const canonico = telefoneCanonico(dados.telefone);
     const [porTelefone] = await tx
       .select()
       .from(hospede)
       .where(
         and(
           eq(hospede.anfitriaoId, anfitriaoId),
-          eq(hospede.telefone, dados.telefone),
+          eq(hospede.telefone, canonico),
         ),
       )
       .limit(1);
@@ -408,7 +411,7 @@ async function acharOuCriarHospede(
     .values({
       anfitriaoId,
       nome: dados.nome.trim(),
-      telefone: dados.telefone?.trim() || null,
+      telefone: dados.telefone ? telefoneCanonico(dados.telefone) : null,
       email: dados.email?.trim() || null,
       documento: dados.documento?.trim() || null,
     })

@@ -71,11 +71,12 @@ const eslintConfig = defineConfig([
   },
 
   {
-    // O site público não tem sessão, logo não há anfitrião para definir: é
-    // justamente este arquivo que descobre qual é. Ele não lê tabela nenhuma
-    // — chama a função `anfitriao_publico()`, que devolve só id e nome das
-    // contas ativas (migração 0015).
-    files: ["src/lib/anfitriao-publico.ts"],
+    // As portas estreitas: funções que PRECISAM rodar sem contexto de
+    // anfitrião, porque é justamente o contexto que estão descobrindo. O site
+    // público não tem sessão; a chave da RIIA chega com um segredo e nada
+    // mais. Nenhuma delas lê tabela direto — todas chamam funções SECURITY
+    // DEFINER mínimas no banco (migrações 0015, 0016 e 0018).
+    files: ["src/lib/anfitriao-publico.ts", "src/lib/chave-api-publica.ts"],
     rules: { "no-restricted-imports": "off" },
   },
 
