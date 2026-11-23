@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
-import postgres from "postgres";
+import { conectar } from "@/db/conectar";
 
 config({ path: [".env.local", ".env"], quiet: true });
 
@@ -26,7 +26,7 @@ if (!process.env.DATABASE_URL_MIGRATOR) {
 }
 
 async function aplicar() {
-  const cliente = postgres(url!, { max: 1 });
+  const cliente = conectar(url!, { max: 1 });
   try {
     await migrate(drizzle(cliente), { migrationsFolder: "./src/db/migrations" });
     console.log("Migrações aplicadas.");

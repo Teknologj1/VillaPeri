@@ -32,7 +32,7 @@ async function principal() {
   });
 
   const { drizzle } = await import("drizzle-orm/postgres-js");
-  const postgres = (await import("postgres")).default;
+  const { conectarComoDono } = await import("@/db/conectar");
   const schema = await import("@/db/schema");
   const { withTenant } = await import("@/db/tenant");
   const { fecharConexao } = await import("@/db/client");
@@ -40,7 +40,7 @@ async function principal() {
   const { criarChave, listarChaves, revogarChave, NIVEIS, ferramentasDoNivel } =
     await import("@/modules/riia");
 
-  const cliente = postgres(process.env.DATABASE_URL_MIGRATOR!, { max: 3 });
+  const cliente = conectarComoDono({ max: 3 });
   const dbOwner = drizzle(cliente, { schema });
 
   const contas = await dbOwner.select().from(anfitriao);

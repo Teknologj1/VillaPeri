@@ -15,6 +15,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
+    "db:bootstrap": "tsx scripts/bootstrap-remoto.ts",
     "usuario:criar": "tsx scripts/criar-usuario.ts",
     "db:studio": "drizzle-kit studio",
     "demo:dados": "tsx scripts/dados-demo.ts",
