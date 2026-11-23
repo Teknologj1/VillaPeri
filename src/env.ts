@@ -45,13 +45,51 @@ const esquema = z.object({
   BETTER_AUTH_URL: z.string().min(1).optional(),
 });
 
-const resultado = esquema.safeParse(process.env);
+type Ambiente = z.infer<typeof esquema>;
 
-if (!resultado.success) {
-  const problemas = resultado.error.issues
-    .map((i) => `  - ${i.path.join(".")}: ${i.message}`)
-    .join("\n");
-  throw new Error(`Variáveis de ambiente inválidas:\n${problemas}`);
+let validado: Ambiente | null = null;
+
+/**
+ * Valida na PRIMEIRA leitura, não ao carregar o módulo.
+ *
+ * A intenção continua a mesma: um valor faltando derruba o programa com o
+ * nome da variável, em vez de virar `undefined` que explode três camadas
+ * adiante. O que mudou é QUANDO.
+ *
+ * Lançar no carregamento do módulo parecia equivalente a "no boot", e não é:
+ * o `next build` avalia os módulos de toda rota para coletar a configuração
+ * dela, muito antes de qualquer requisição. Uma rota que nem toca no banco,
+ * mas que alcance este arquivo por uma cadeia de importações, derruba o
+ * build inteiro num ambiente sem as variáveis de servidor — foi assim que o
+ * deploy na Vercel falhou com `/api/v1/openapi.json`, que só serve um JSON
+ * estático.
+ *
+ * Adiando para a primeira LEITURA, a garantia fica onde interessa: quem
+ * precisa da variável falha alto, e quem não precisa publica sem ela.
+ */
+function ler(): Ambiente {
+  if (validado) return validado;
+
+  const resultado = esquema.safeParse(process.env);
+  if (!resultado.success) {
+    const problemas = resultado.error.issues
+      .map((i) => `  - ${i.path.join(".")}: ${i.message}`)
+      .join("\n");
+    throw new Error(`Variáveis de ambiente inválidas:\n${problemas}`);
+  }
+
+  validado = resultado.data;
+  return validado;
 }
 
-export const env = resultado.data;
+/**
+ * As variáveis validadas. Um proxy, para `env.DATABASE_URL` continuar sendo
+ * a forma de ler em todo o sistema.
+ */
+export const env = new Proxy({} as Ambiente, {
+  get: (_alvo, propriedade) => ler()[propriedade as keyof Ambiente],
+  has: (_alvo, propriedade) => propriedade in ler(),
+  ownKeys: () => Reflect.ownKeys(ler()),
+  getOwnPropertyDescriptor: (_alvo, propriedade) =>
+    Reflect.getOwnPropertyDescriptor(ler(), propriedade),
+});

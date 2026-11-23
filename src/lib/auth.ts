@@ -29,7 +29,22 @@ function segredo(): string {
   return env.BETTER_AUTH_SECRET;
 }
 
-export const auth = betterAuth({
+/**
+ * Montada na PRIMEIRA leitura, não ao carregar o módulo.
+ *
+ * Mesma razão de `src/env.ts` e `src/db/client.ts`: o `next build` avalia os
+ * módulos de toda rota para coletar a configuração dela, e construir isto no
+ * topo do arquivo lê `BETTER_AUTH_SECRET` e `DATABASE_URL` antes de existir
+ * qualquer requisição. Num ambiente sem essas variáveis o build falha
+ * inteiro — inclusive para as páginas da vitrine, que não têm login.
+ *
+ * Adiando, o painel exige as variáveis quando alguém tenta entrar, e o site
+ * publica sem elas.
+ */
+let instancia: ReturnType<typeof montar> | null = null;
+
+function montar() {
+  return betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }),
   secret: segredo(),
   baseURL: env.BETTER_AUTH_URL ?? "http://localhost:3000",
@@ -53,6 +68,24 @@ export const auth = betterAuth({
     // pela coluna `exige_dois_fatores`.
     twoFactor({ issuer: "Villa Peri" }),
   ],
+  });
+}
+
+function real() {
+  instancia ??= montar();
+  return instancia;
+}
+
+/**
+ * Proxy sobre a instância preguiçosa, para o resto do sistema continuar
+ * escrevendo `auth.api.getSession(...)`.
+ */
+export const auth = new Proxy({} as ReturnType<typeof montar>, {
+  get(_alvo, propriedade) {
+    const alvo = real();
+    const valor = Reflect.get(alvo, propriedade, alvo);
+    return typeof valor === "function" ? valor.bind(alvo) : valor;
+  },
 });
 
-export type Sessao = typeof auth.$Infer.Session;
+export type Sessao = ReturnType<typeof montar>["$Infer"]["Session"];

@@ -18,7 +18,18 @@ import { auth } from "./auth";
  * ao acrescentar um caminho novo.
  */
 export async function sessaoAtual(): Promise<SessaoDoPainel | null> {
-  const sessao = await auth.api.getSession({ headers: await headers() });
+  // Os cabeçalhos PRIMEIRO, numa linha própria.
+  //
+  // Não é estilo: em `auth.api.getSession({ headers: await headers() })` o
+  // JavaScript avalia `auth.api` antes do argumento, e esse acesso monta a
+  // instância do Better Auth, que lê as variáveis de ambiente. Durante o
+  // `next build` isso acontece ANTES de `headers()` marcar a página como
+  // dependente da requisição — e o que deveria ser uma página pulada no
+  // prerender vira um build quebrado por falta de `DATABASE_URL`.
+  //
+  // Lendo os cabeçalhos antes, o prerender para aqui, como deve.
+  const cabecalhos = await headers();
+  const sessao = await auth.api.getSession({ headers: cabecalhos });
   if (!sessao?.user?.id) return null;
 
   return carregarSessaoDoPainel({
