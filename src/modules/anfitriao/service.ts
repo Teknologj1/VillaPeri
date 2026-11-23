@@ -59,6 +59,48 @@ export async function buscarPerfilComPermissoes(
   };
 }
 
+/**
+ * Os perfis do anfitrião, para a tela de usuários escolher um.
+ *
+ * Em ordem alfabética e não pela matriz de poder: a ordem de poder é uma
+ * leitura nossa ("Proprietário > Gerente > Recepção"), e um perfil novo
+ * cadastrado pelo proprietário não tem lugar nela. Alfabética é previsível.
+ */
+export async function listarPerfis(tx: Tx): Promise<PerfilResumido[]> {
+  const linhas = await tx.select().from(perfil).orderBy(perfil.nome);
+  return linhas.map((p) => ({
+    id: p.id,
+    nome: p.nome,
+    sistema: p.sistema,
+    exigeDoisFatores: p.exigeDoisFatores,
+    descontoMaximoPontosBase: p.descontoMaximoPontosBase,
+  }));
+}
+
+/** Um perfil pelo id. `null` quando não é deste anfitrião — o RLS o esconde. */
+export async function buscarPerfil(
+  tx: Tx,
+  perfilId: string,
+): Promise<PerfilResumido | null> {
+  const [p] = await tx.select().from(perfil).where(eq(perfil.id, perfilId)).limit(1);
+  if (!p) return null;
+  return {
+    id: p.id,
+    nome: p.nome,
+    sistema: p.sistema,
+    exigeDoisFatores: p.exigeDoisFatores,
+    descontoMaximoPontosBase: p.descontoMaximoPontosBase,
+  };
+}
+
+export type PerfilResumido = {
+  id: string;
+  nome: string;
+  sistema: boolean;
+  exigeDoisFatores: boolean;
+  descontoMaximoPontosBase: number;
+};
+
 export type Anfitriao = typeof anfitriao.$inferSelect;
 export type Propriedade = typeof propriedade.$inferSelect;
 export type TipoAcomodacao = typeof tipoAcomodacao.$inferSelect;
