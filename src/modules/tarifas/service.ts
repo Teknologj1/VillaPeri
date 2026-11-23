@@ -3,6 +3,7 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import type { Tx } from "@/db/tenant";
 import type { Noite } from "@/lib/data";
 import { buscarPropriedade } from "@/modules/anfitriao";
+import { type Autor, auditar } from "@/modules/auditoria";
 
 import { feriadosNoPeriodo } from "./feriados";
 import {
@@ -12,6 +13,7 @@ import {
   orcar,
 } from "./motor";
 import {
+  type FaixaCancelamento,
   cupom,
   descontoEstadiaLonga,
   extra,
@@ -168,4 +170,131 @@ export async function buscarPoliticaPadrao(tx: Tx) {
     .where(eq(politicaCancelamento.padrao, true))
     .limit(1);
   return p;
+}
+
+// ---------------------------------------------------------------------------
+// Editar
+// ---------------------------------------------------------------------------
+
+export type RegraParaEditar = {
+  precoSemanaCentavos?: number | null;
+  precoFimDeSemanaCentavos?: number | null;
+  precoFixoCentavos?: number | null;
+  ajustePontosBase?: number | null;
+  valorPessoaExtraCentavos?: number | null;
+  valorCriancaCentavos?: number | null;
+  aplicaNaVespera?: boolean;
+  ativa?: boolean;
+};
+
+/**
+ * Muda os valores de uma regra de tarifa.
+ *
+ * Só os VALORES. Nível, escopo e vigência não se editam aqui de propósito:
+ * mudar o nível de uma regra muda quem ela vence na pilha de prioridade, e
+ * mudar a vigência muda quais noites ela cobre. Nos dois casos o preço de uma
+ * data que já foi cotada mudaria sem ninguém pedir — e reserva já fechada tem
+ * cópia congelada, mas cotação aberta no site, não.
+ *
+ * A auditoria guarda o antes e o depois, porque "por que a diária subiu?" é
+ * pergunta que aparece meses depois, quando ninguém lembra.
+ */
+export async function atualizarRegraTarifa(
+  tx: Tx,
+  anfitriaoId: string,
+  id: string,
+  dados: RegraParaEditar,
+  autor: Autor,
+): Promise<void> {
+  const [antes] = await tx
+    .select()
+    .from(regraTarifa)
+    .where(eq(regraTarifa.id, id))
+    .limit(1);
+  if (!antes) throw new Error("Regra de tarifa não encontrada.");
+
+  // O banco já recusa preço fixo E ajuste percentual juntos; aqui a mensagem
+  // é legível em vez de uma violação de constraint.
+  const fixo = dados.precoFixoCentavos ?? antes.precoFixoCentavos;
+  const ajuste = dados.ajustePontosBase ?? antes.ajustePontosBase;
+  if (fixo !== null && ajuste !== null) {
+    throw new Error(
+      "A regra tem preço fixo OU ajuste percentual, nunca os dois. Zere um dos campos.",
+    );
+  }
+
+  await tx
+    .update(regraTarifa)
+    .set({ ...dados, atualizadoEm: new Date() })
+    .where(eq(regraTarifa.id, id));
+
+  await auditar(tx, {
+    anfitriaoId,
+    entidade: "regra_tarifa",
+    entidadeId: id,
+    acao: "editou",
+    valorAntes: {
+      nome: antes.nome,
+      precoSemanaCentavos: antes.precoSemanaCentavos,
+      precoFimDeSemanaCentavos: antes.precoFimDeSemanaCentavos,
+      precoFixoCentavos: antes.precoFixoCentavos,
+      ajustePontosBase: antes.ajustePontosBase,
+      valorPessoaExtraCentavos: antes.valorPessoaExtraCentavos,
+      valorCriancaCentavos: antes.valorCriancaCentavos,
+      ativa: antes.ativa,
+    },
+    valorDepois: dados,
+    autor,
+  });
+}
+
+export type PoliticaParaEditar = {
+  faixas?: FaixaCancelamento[];
+  saidaAntecipadaPontosBase?: number;
+};
+
+/**
+ * Muda a política de cancelamento padrão.
+ *
+ * As faixas vão guardadas da MAIOR antecedência para a menor, que é a ordem em
+ * que o motor as lê e a ordem em que uma pessoa pensa ("se eu cancelar com um
+ * mês…"). Guardar fora de ordem funciona, porque o motor ordena, mas deixa a
+ * tela e o texto da API confusos.
+ */
+export async function atualizarPoliticaPadrao(
+  tx: Tx,
+  anfitriaoId: string,
+  dados: PoliticaParaEditar,
+  autor: Autor,
+): Promise<void> {
+  const atual = await buscarPoliticaPadrao(tx);
+  if (!atual) throw new Error("Nenhuma política de cancelamento cadastrada.");
+
+  const faixas = dados.faixas
+    ? [...dados.faixas].sort((a, b) => b.diasAntes - a.diasAntes)
+    : undefined;
+
+  await tx
+    .update(politicaCancelamento)
+    .set({
+      ...(faixas ? { faixas } : {}),
+      ...(dados.saidaAntecipadaPontosBase !== undefined
+        ? { saidaAntecipadaPontosBase: dados.saidaAntecipadaPontosBase }
+        : {}),
+      atualizadoEm: new Date(),
+    })
+    .where(eq(politicaCancelamento.id, atual.id));
+
+  await auditar(tx, {
+    anfitriaoId,
+    entidade: "politica_cancelamento",
+    entidadeId: atual.id,
+    acao: "editou",
+    valorAntes: {
+      faixas: atual.faixas,
+      saidaAntecipadaPontosBase: atual.saidaAntecipadaPontosBase,
+    },
+    valorDepois: { faixas, ...dados },
+    autor,
+  });
 }

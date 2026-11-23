@@ -32,6 +32,10 @@ export {
 } from "./motor";
 
 export {
+  type PoliticaParaEditar,
+  type RegraParaEditar,
+  atualizarPoliticaPadrao,
+  atualizarRegraTarifa,
   buscarCupom,
   buscarPoliticaPadrao,
   listarExtras,
