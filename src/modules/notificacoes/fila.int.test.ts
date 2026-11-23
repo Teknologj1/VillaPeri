@@ -29,6 +29,8 @@ let anfitriaoId: string;
 const entregues: string[] = [];
 let demora = 0;
 let falharProximas = 0;
+/** O status que o provedor falso devolve ao falhar. */
+let statusDaFalha = 503;
 
 beforeAll(async () => {
   // Um enviador falso, posto no ambiente: `enviadorDoCanal` lê daqui.
@@ -44,7 +46,7 @@ beforeAll(async () => {
     if (demora > 0) await new Promise((r) => setTimeout(r, demora));
     if (falharProximas > 0) {
       falharProximas--;
-      return new Response("provedor fora do ar", { status: 503 });
+      return new Response("falha do provedor", { status: statusDaFalha });
     }
     entregues.push(corpo.text);
     return new Response(JSON.stringify({ id: "msg" }), { status: 200 });
@@ -73,6 +75,7 @@ beforeEach(async () => {
   entregues.length = 0;
   demora = 0;
   falharProximas = 0;
+  statusDaFalha = 503;
   await dbOwner
     .delete(notificacao)
     .where(eq(notificacao.anfitriaoId, anfitriaoId));
@@ -249,5 +252,86 @@ describe("destravar", () => {
 
     expect(r.enviadas).toBe(0);
     expect(entregues).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe("o provedor dizendo 'não insista'", () => {
+  it("422 desiste na PRIMEIRA, sem gastar as cinco tentativas", async () => {
+    // É o combinado com a RIIA: 422 é número sem WhatsApp. Insistir não muda
+    // o resultado — só atrasa o momento em que a recepção descobre que o
+    // hóspede não foi avisado.
+    await enfileirarUma("número sem WhatsApp");
+    statusDaFalha = 422;
+    falharProximas = 99;
+
+    const r = await drenarFila(anfitriaoId);
+
+    expect(r.falharam).toBe(1);
+    const [linha] = await linhas();
+    expect(linha!.status).toBe("falhou");
+    expect(linha!.tentativas).toBe(1);
+    expect(linha!.ultimoErro).toMatch(/422/);
+  });
+
+  it("e não é tentada de novo nas passadas seguintes", async () => {
+    await enfileirarUma("número sem WhatsApp");
+    statusDaFalha = 422;
+    falharProximas = 99;
+    await drenarFila(anfitriaoId);
+
+    const chamadasAntes = falharProximas;
+    const segunda = await drenarFila(anfitriaoId);
+
+    expect(segunda.enviadas + segunda.falharam).toBe(0);
+    expect(falharProximas).toBe(chamadasAntes);
+  });
+
+  it("503 continua tentando — é falha passageira, e o provedor volta", async () => {
+    // A diferença entre os dois é a razão de o permanente existir: tratar
+    // tudo igual faria um provedor fora do ar por dois minutos matar a
+    // confirmação de reserva do hóspede.
+    await enfileirarUma("provedor caiu");
+    statusDaFalha = 503;
+    falharProximas = 1;
+
+    await drenarFila(anfitriaoId);
+    const [linha] = await linhas();
+    expect(linha!.status).toBe("pendente");
+
+    const segunda = await drenarFila(anfitriaoId);
+    expect(segunda.enviadas).toBe(1);
+    expect(entregues).toEqual(["provedor caiu"]);
+  });
+
+  it("400 também desiste: o corpo é nosso, e reenviar manda o mesmo", async () => {
+    await enfileirarUma("corpo recusado");
+    statusDaFalha = 400;
+    falharProximas = 99;
+
+    await drenarFila(anfitriaoId);
+
+    const [linha] = await linhas();
+    expect(linha!.status).toBe("falhou");
+    expect(linha!.tentativas).toBe(1);
+  });
+
+  it("401 e 404 continuam tentando: são configuração, que alguém conserta", async () => {
+    // Segredo errado ou integração ainda não cadastrada do outro lado. Uma
+    // pessoa arruma, e aí a mensagem que estava na fila sai — desistir na
+    // primeira a perderia.
+    for (const status of [401, 404]) {
+      await dbOwner
+        .delete(notificacao)
+        .where(eq(notificacao.anfitriaoId, anfitriaoId));
+      await enfileirarUma(`erro ${status}`);
+      statusDaFalha = status;
+      falharProximas = 1;
+
+      await drenarFila(anfitriaoId);
+      const [linha] = await linhas();
+      expect(linha!.status, `status ${status}`).toBe("pendente");
+    }
   });
 });

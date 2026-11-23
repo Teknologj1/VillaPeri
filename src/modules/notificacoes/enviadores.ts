@@ -42,6 +42,40 @@ export type Enviador = {
  * enviada. Fingir que saiu seria o pior resultado possível: o hóspede não
  * recebe e ninguém fica sabendo.
  */
+/**
+ * O provedor disse que esta mensagem NUNCA vai ser entregue.
+ *
+ * Número sem WhatsApp, e-mail que não existe, corpo que ele recusa. Insistir
+ * não muda o resultado: só gasta as cinco tentativas e atrasa o momento em
+ * que a recepção descobre que o hóspede não foi avisado.
+ *
+ * Separado da falha passageira de propósito. Um provedor fora do ar PRECISA
+ * de nova tentativa; um número que não tem WhatsApp precisa de uma pessoa.
+ */
+export class FalhaPermanenteError extends Error {
+  constructor(
+    mensagem: string,
+    readonly status: number,
+  ) {
+    super(mensagem);
+    this.name = "FalhaPermanenteError";
+  }
+}
+
+/**
+ * Se o provedor está dizendo "não insista".
+ *
+ * 422 é o combinado com a RIIA: ela responde assim quando o número não tem
+ * WhatsApp, e 503 quando é falha passageira. 400 entra junto porque é o
+ * nosso corpo que está errado — mandar o mesmo de novo dá o mesmo erro.
+ *
+ * Tudo o mais tenta de novo, inclusive 401 e 404: são configuração, que uma
+ * pessoa conserta, e aí a mensagem que estava na fila sai.
+ */
+export function ehPermanente(status: number): boolean {
+  return status === 400 || status === 422;
+}
+
 export class SemProvedorError extends Error {
   constructor(canal: string, variavel: string) {
     super(
@@ -79,9 +113,11 @@ export function enviadorResend(chave: string, remetente: string): Enviador {
 
       if (!resposta.ok) {
         const detalhe = await resposta.text().catch(() => "");
-        throw new Error(
-          `Resend respondeu ${resposta.status}: ${detalhe.slice(0, 300)}`,
-        );
+        const texto = `Resend respondeu ${resposta.status}: ${detalhe.slice(0, 300)}`;
+        if (ehPermanente(resposta.status)) {
+          throw new FalhaPermanenteError(texto, resposta.status);
+        }
+        throw new Error(texto);
       }
     },
   };
@@ -169,9 +205,14 @@ export function enviadorRiiaWebhook(url: string, segredo: string): Enviador {
 
       if (!resposta.ok) {
         const detalhe = await resposta.text().catch(() => "");
-        throw new Error(
-          `A RIIA respondeu ${resposta.status}: ${detalhe.slice(0, 300)}`,
-        );
+        const texto = `A RIIA respondeu ${resposta.status}: ${detalhe.slice(0, 300)}`;
+        // O combinado: 422 é "não adianta reenviar" (número sem WhatsApp),
+        // 503 é falha passageira. Insistir num 422 gasta as cinco tentativas
+        // e atrasa o aviso à recepção de que o hóspede não foi avisado.
+        if (ehPermanente(resposta.status)) {
+          throw new FalhaPermanenteError(texto, resposta.status);
+        }
+        throw new Error(texto);
       }
     },
   };

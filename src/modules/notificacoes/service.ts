@@ -2,7 +2,11 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 
 import { type Tx, withTenant } from "@/db/tenant";
 
-import { enviadorDoCanal, variavelFaltante } from "./enviadores";
+import {
+  FalhaPermanenteError,
+  enviadorDoCanal,
+  variavelFaltante,
+} from "./enviadores";
 import { notificacao } from "./schema";
 
 export type Canal = "email" | "whatsapp";
@@ -145,14 +149,19 @@ export async function drenarFila(
       // uma mensagem que derruba o processo de ser tentada para sempre.
       const texto = erro instanceof Error ? erro.message : String(erro);
 
+      // O provedor pode dizer "não insista": número sem WhatsApp, e-mail que
+      // não existe. Aí desiste na primeira, em vez de gastar cinco tentativas
+      // para chegar à mesma conclusão — e a recepção vê o problema hoje.
+      const permanente = erro instanceof FalhaPermanenteError;
+
       await withTenant(anfitriaoId, (tx) =>
         tx
           .update(notificacao)
           .set({
-            // Só desiste ao esgotar as tentativas; antes disso volta para a
-            // fila, para a próxima passada.
             status:
-              m.tentativas >= MAXIMO_DE_TENTATIVAS ? "falhou" : "pendente",
+              permanente || m.tentativas >= MAXIMO_DE_TENTATIVAS
+                ? "falhou"
+                : "pendente",
             ultimoErro: texto.slice(0, 500),
             reservadaEm: null,
           })

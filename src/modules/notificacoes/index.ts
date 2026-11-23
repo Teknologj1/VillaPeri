@@ -9,7 +9,9 @@
 export {
   type Enviador,
   type MensagemParaEnviar,
+  FalhaPermanenteError,
   SemProvedorError,
+  ehPermanente,
   enviadorDoCanal,
   variavelFaltante,
 } from "./enviadores";
