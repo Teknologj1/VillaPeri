@@ -14,3 +14,14 @@ export {
   podeNoModulo,
   type SessaoDoPainel,
 } from "./service";
+
+export {
+  AcessoJaExisteError,
+  criarAcessoAoPainel,
+  definirAtivoDoMembro,
+  listarAcessos,
+  sortearSenhaNova,
+  trocarPerfilDoMembro,
+  type AcessoAoPainel,
+  type AcessoNovo,
+} from "./usuarios";
