@@ -13,9 +13,15 @@ import {
   tipoAcomodacao,
 } from "@/modules/anfitriao/schema";
 
+import { auditoria } from "@/modules/auditoria/schema";
+
 import { SemTarifaError, orcar } from "./motor";
 import { feriado, regraTarifa } from "./schema";
-import { orcarEstadia, sincronizarFeriadosNacionais } from "./service";
+import {
+  atualizarRegraTarifa,
+  orcarEstadia,
+  sincronizarFeriadosNacionais,
+} from "./service";
 
 config({ path: [".env.local", ".env"], quiet: true });
 
@@ -193,5 +199,112 @@ describe("orçamento a partir do banco", () => {
       .where(eq(feriado.anfitriaoId, anfitriaoId));
     expect(doOutro.length).toBeGreaterThan(0);
     expect(doOutro.every((f) => f.anfitriaoId === anfitriaoId)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe("editar uma regra de tarifa", () => {
+  async function umaRegra() {
+    const [r] = await dbOwner
+      .insert(regraTarifa)
+      .values({
+        anfitriaoId,
+        propriedadeId,
+        nome: "Para editar",
+        nivel: "padrao",
+        precoSemanaCentavos: 50_000,
+        precoFimDeSemanaCentavos: 70_000,
+      })
+      .returning();
+    return r!;
+  }
+
+  it("muda os valores e grava o antes na auditoria", async () => {
+    // "Por que a diária subiu?" é pergunta que aparece meses depois, quando
+    // ninguém lembra — e sem o valor anterior não há como responder.
+    const r = await umaRegra();
+
+    await withTenant(anfitriaoId, (tx) =>
+      atualizarRegraTarifa(
+        tx,
+        anfitriaoId,
+        r.id,
+        { precoSemanaCentavos: 60_000 },
+        { tipo: "sistema" },
+      ),
+    );
+
+    const [depois] = await dbOwner
+      .select()
+      .from(regraTarifa)
+      .where(eq(regraTarifa.id, r.id));
+    expect(depois!.precoSemanaCentavos).toBe(60_000);
+    // O que não foi mandado não é apagado.
+    expect(depois!.precoFimDeSemanaCentavos).toBe(70_000);
+
+    const [registro] = await dbOwner
+      .select()
+      .from(auditoria)
+      .where(eq(auditoria.entidadeId, r.id));
+    expect(registro!.acao).toBe("editou");
+    expect(
+      (registro!.valorAntes as { precoSemanaCentavos: number })
+        .precoSemanaCentavos,
+    ).toBe(50_000);
+  });
+
+  it("recusa preço fixo E ajuste percentual na mesma regra", async () => {
+    // São alternativas, não somam. O banco já recusa; aqui a mensagem é
+    // legível em vez de uma violação de constraint.
+    const [r] = await dbOwner
+      .insert(regraTarifa)
+      .values({
+        anfitriaoId,
+        propriedadeId,
+        nome: "Feriado com ajuste",
+        nivel: "feriado",
+        ajustePontosBase: 2_000,
+      })
+      .returning();
+
+    await expect(
+      withTenant(anfitriaoId, (tx) =>
+        atualizarRegraTarifa(
+          tx,
+          anfitriaoId,
+          r!.id,
+          { precoFixoCentavos: 137_500 },
+          { tipo: "sistema" },
+        ),
+      ),
+    ).rejects.toThrow(/preço fixo OU ajuste/);
+  });
+
+  it("o preço novo vale para a cotação seguinte", async () => {
+    // É o ponto da tela inteira: mudar aqui muda o que o site cota, porque
+    // não há uma segunda tabela de preços.
+    const r = await umaRegra();
+    await dbOwner
+      .update(regraTarifa)
+      .set({ ativa: false })
+      .where(eq(regraTarifa.id, r.id));
+
+    await withTenant(anfitriaoId, (tx) =>
+      atualizarRegraTarifa(
+        tx,
+        anfitriaoId,
+        r.id,
+        { ativa: true, precoSemanaCentavos: 12_300 },
+        { tipo: "sistema" },
+      ),
+    );
+
+    const [depois] = await dbOwner
+      .select()
+      .from(regraTarifa)
+      .where(eq(regraTarifa.id, r.id));
+    expect(depois!.ativa).toBe(true);
+    expect(depois!.precoSemanaCentavos).toBe(12_300);
   });
 });

@@ -43,10 +43,13 @@ export {
   type MesDaUnidade,
   type PedidoDeSugestao,
   type Sugestao,
+  type RegraDeEstadiaParaEditar,
   abrirDatas,
+  atualizarRegraDeEstadia,
   calendarioDoPeriodo,
   consultarDisponibilidade,
   fecharDatas,
   listarBloqueios,
+  listarRegrasDeEstadia,
   sugerirDatas,
 } from "./service";
