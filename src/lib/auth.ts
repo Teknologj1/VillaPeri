@@ -79,12 +79,44 @@ function real() {
 /**
  * Proxy sobre a instância preguiçosa, para o resto do sistema continuar
  * escrevendo `auth.api.getSession(...)`.
+ *
+ * Os traps de `has`, `ownKeys` e `getOwnPropertyDescriptor` NÃO são enfeite.
+ * O `toNextJsHandler` do Better Auth decide o que recebeu assim:
+ *
+ *     "handler" in auth ? auth.handler(request) : auth(request)
+ *
+ * Com apenas o `get`, o `in` consulta o ALVO do proxy — que é `{}` — e
+ * responde que não há `handler`. O Better Auth então trata o proxy como se
+ * fosse a própria função e a chama, com `auth is not a function`: o login
+ * inteiro para, e nem o build nem os testes de unidade percebem, porque o
+ * erro só aparece quando alguém tenta entrar.
+ *
+ * Qualquer proxy sobre objeto de biblioteca precisa dos quatro traps. Foi a
+ * lição de deixar o login fora do ar por um deploy.
  */
+const ligadas = new Map<PropertyKey, unknown>();
+
 export const auth = new Proxy({} as ReturnType<typeof montar>, {
   get(_alvo, propriedade) {
     const alvo = real();
     const valor = Reflect.get(alvo, propriedade, alvo);
-    return typeof valor === "function" ? valor.bind(alvo) : valor;
+    if (typeof valor !== "function") return valor;
+
+    // A função ligada é guardada: sem isto, cada acesso a `auth.handler`
+    // devolveria uma função NOVA, e `auth.handler === auth.handler` seria
+    // falso. Quem guardar a referência e comparar depois se perderia.
+    if (!ligadas.has(propriedade)) {
+      ligadas.set(propriedade, valor.bind(alvo));
+    }
+    return ligadas.get(propriedade);
+  },
+  has: (_alvo, propriedade) => propriedade in real(),
+  ownKeys: () => Reflect.ownKeys(real()),
+  getOwnPropertyDescriptor(_alvo, propriedade) {
+    const d = Reflect.getOwnPropertyDescriptor(real(), propriedade);
+    // `ownKeys` só pode listar o que é configurável quando o alvo é um
+    // objeto comum vazio; sem isto o JavaScript recusa a enumeração.
+    return d && { ...d, configurable: true };
   },
 });
 

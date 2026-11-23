@@ -36,11 +36,17 @@ export {
 } from "./repo";
 
 export {
+  type BloqueioNaTela,
   type DadosBloqueio,
+  type DiaDoCalendario,
   type EscopoBloqueio,
+  type MesDaUnidade,
   type PedidoDeSugestao,
   type Sugestao,
+  abrirDatas,
+  calendarioDoPeriodo,
   consultarDisponibilidade,
   fecharDatas,
+  listarBloqueios,
   sugerirDatas,
 } from "./service";
