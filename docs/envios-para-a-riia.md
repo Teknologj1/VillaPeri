@@ -189,12 +189,21 @@ enviamos por canal seguro — **não por WhatsApp nem por e-mail**.
 
 ## 4. O que responder
 
+**Combinado em 22/11/2026, e já implementado dos dois lados:**
+
 | Resposta | O que fazemos |
 | --- | --- |
 | **`2xx`** | Marcamos como entregue e não mandamos de novo |
-| **`4xx`** | Tentamos de novo até cinco vezes, depois paramos. O erro aparece no nosso painel |
-| **`5xx`** | Idem |
-| **tempo esgotado** | Idem — e é exatamente aqui que o `id` da seção 2 salva o hóspede de receber duas vezes |
+| **`422`** | **Paramos na hora.** É o "não adianta reenviar" — número sem WhatsApp. A mensagem vai para `falhou` com o motivo, na primeira tentativa, e aparece para a recepção |
+| **`400`** | Idem: o corpo é nosso e reenviar manda o mesmo |
+| **`503`** | Tentamos de novo, até cinco vezes. Falha passageira |
+| **`401`, `404`, `409`** | Tentamos de novo. São configuração ou disputa momentânea, que uma pessoa ou o tempo resolvem |
+| **tempo esgotado** | Tentamos de novo — e é exatamente aqui que o `id` da seção 2 salva o hóspede de receber duas vezes |
+
+A diferença entre 422 e 503 é a razão de ela existir: tratar tudo igual faria
+um provedor fora do ar por dois minutos matar a confirmação de reserva de um
+hóspede, e faria um número sem WhatsApp gastar cinco tentativas antes de
+alguém descobrir que o aviso nunca chegou.
 
 Respondam `2xx` assim que a mensagem entrar na fila de vocês. **Não segurem a
 conexão** esperando a confirmação da Meta: se a resposta demorar, nós
@@ -224,33 +233,16 @@ comportamento certo: o texto já vem pronto.
 
 ---
 
-## 6. A janela de 24 horas — o ponto que precisa de decisão de vocês
+## 6. A janela de 24 horas — resolvida
 
-Fora da janela de 24 horas desde a última mensagem do hóspede, a Meta só
-entrega **modelo (template) aprovado**, não texto livre.
+Era a única questão aberta. **Não se aplica.**
 
-Boa parte das nossas mensagens cai fora dessa janela:
+A RIIA envia pelo WhatsApp Web da própria casa, não pela API oficial da Meta.
+Texto livre sai a qualquer hora, e não há modelo a aprovar.
 
-| Mensagem | Dentro da janela? |
-| --- | --- |
-| `solicitacao.criada` | Geralmente **não** — o hóspede preencheu um formulário no site, não escreveu no WhatsApp |
-| `reserva.confirmada` | Talvez — depende de quando ele falou com a RIIA pela última vez |
-| `fnrh.link_enviado` | Geralmente **não** — vai dias antes da chegada |
-
-**Precisamos saber como vocês resolvem isso.** Duas saídas que vemos:
-
-1. **Vocês mantêm modelos aprovados** e escolhem o modelo pelo campo `evento`,
-   preenchendo os parâmetros a partir do `texto` ou de campos que a gente
-   acrescenta. Se for esse o caminho, digam **quais parâmetros cada modelo
-   precisa** e nós passamos a mandá-los estruturados, em vez de só o texto.
-2. **Vocês respondem `4xx`** quando está fora da janela, e a mensagem fica
-   pendente no nosso painel para a recepção mandar à mão.
-
-A primeira é melhor para o hóspede. A segunda é aceitável para começar, desde
-que a recepção veja a pendência — e vê.
-
-Esta é a única parte deste documento que depende de uma resposta de vocês
-antes de ligarmos em produção.
+Isso simplifica tudo o que vinha depois: o `texto` que mandamos é o que o
+hóspede lê, sem parâmetros estruturados nem variantes por evento. A seção 5
+continua valendo como está.
 
 ---
 
