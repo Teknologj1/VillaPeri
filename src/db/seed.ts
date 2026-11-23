@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { conectar } from "./conectar";
 
 import {
   anfitriao,
@@ -48,7 +48,7 @@ if (!url) {
   );
 }
 
-const cliente = postgres(url, { max: 1 });
+const cliente = conectar(url, { max: 1 });
 const db = drizzle(cliente, { schema });
 
 // ---------------------------------------------------------------------------

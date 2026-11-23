@@ -40,13 +40,11 @@ async function principal() {
   const { anfitriao, perfil } = await import("@/modules/anfitriao/schema");
   const { membro } = await import("@/modules/autenticacao/schema-membro");
   const { drizzle } = await import("drizzle-orm/postgres-js");
-  const postgres = (await import("postgres")).default;
+  const { conectarComoDono } = await import("@/db/conectar");
 
   // O anfitrião e o perfil são lidos com a conexão de migração: ainda não há
   // sessão, logo não há contexto de anfitrião para o RLS.
-  const urlOwner = process.env.DATABASE_URL_MIGRATOR;
-  if (!urlOwner) throw new Error("DATABASE_URL_MIGRATOR é necessária.");
-  const clienteOwner = postgres(urlOwner, { max: 1 });
+  const clienteOwner = conectarComoDono({ max: 1 });
   const dbOwner = drizzle(clienteOwner);
 
   try {

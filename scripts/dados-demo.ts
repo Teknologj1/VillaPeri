@@ -44,10 +44,10 @@ async function principal() {
   const { noiteOcupada } = await import("@/modules/calendario/schema");
   const { pagamento } = await import("@/modules/reservas/schema");
   const { drizzle } = await import("drizzle-orm/postgres-js");
-  const postgres = (await import("postgres")).default;
+  const { conectarComoDono } = await import("@/db/conectar");
   const schema = await import("@/db/schema");
 
-  const cliente = postgres(process.env.DATABASE_URL_MIGRATOR!, { max: 3 });
+  const cliente = conectarComoDono({ max: 3 });
   const dbOwner = drizzle(cliente, { schema });
 
   const [conta] = await dbOwner
