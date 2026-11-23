@@ -76,10 +76,13 @@ export async function ocuparNoitesIgnorandoExistentes(
     origemId: string;
     noites: Noite[];
   },
-): Promise<void> {
-  if (dados.noites.length === 0) return;
+): Promise<number> {
+  if (dados.noites.length === 0) return 0;
 
-  await tx
+  // `returning` para saber QUANTAS entraram de verdade. Sem isso, quem chama
+  // só conhece quantas pediu — e com `onConflictDoNothing` os dois números
+  // são diferentes sempre que a noite já estava tomada.
+  const inseridas = await tx
     .insert(noiteOcupada)
     .values(
       dados.noites.map((noite) => ({
@@ -90,7 +93,10 @@ export async function ocuparNoitesIgnorandoExistentes(
         origemId: dados.origemId,
       })),
     )
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning({ noite: noiteOcupada.noite });
+
+  return inseridas.length;
 }
 
 /** Libera as noites de uma reserva ou bloqueio (cancelamento, remarcação). */

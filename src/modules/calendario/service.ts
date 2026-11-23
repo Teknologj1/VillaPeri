@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 
+import { and, eq, gte, lte } from "drizzle-orm";
+
 import type { Tx } from "@/db/tenant";
 import {
   type Noite,
@@ -14,6 +16,7 @@ import {
   listarTipos,
   listarUnidadesAtivas,
 } from "@/modules/anfitriao";
+import { type Autor, auditar } from "@/modules/auditoria";
 import { listarFeriados } from "@/modules/tarifas";
 
 import {
@@ -23,12 +26,14 @@ import {
 } from "./disponibilidade";
 import { BloqueioEmConflitoError, type ReservaEmConflito } from "./erros";
 import {
+  type OrigemNoite,
   buscarNoitesOcupadas,
   buscarRegrasEstadia,
+  liberarNoitesPorOrigem,
   ocuparNoitesIgnorandoExistentes,
   reservasNasNoites,
 } from "./repo";
-import { bloqueio } from "./schema";
+import { bloqueio, noiteOcupada } from "./schema";
 
 /**
  * Disponibilidade e preço-regra para um pedido, carregando o que o motor
@@ -211,8 +216,9 @@ export async function fecharDatas(
     origem: "manual",
   });
 
+  let noitesFechadas = 0;
   for (const u of alvo) {
-    await ocuparNoitesIgnorandoExistentes(tx, {
+    noitesFechadas += await ocuparNoitesIgnorandoExistentes(tx, {
       anfitriaoId,
       unidadeId: u.id,
       origem: "bloqueio",
@@ -221,7 +227,20 @@ export async function fecharDatas(
     });
   }
 
-  return { bloqueioId, noitesFechadas: noites.length * alvo.length };
+  // Zero noites: estas datas já estavam fechadas. Deixar o registro nascer
+  // assim seria criar um fechamento que não é dono de noite nenhuma — e, ao
+  // reabrir o fechamento que de fato as segura, a tela continuaria mostrando
+  // este aqui como se as datas estivessem fechadas, com as noites livres.
+  //
+  // O `throw` desfaz a transação inteira, inclusive a linha já inserida.
+  if (noitesFechadas === 0) {
+    throw new Error(
+      "Estas datas já estão fechadas. Reabra o fechamento existente antes " +
+        "de criar outro, para não ficarem dois registros sobre as mesmas noites.",
+    );
+  }
+
+  return { bloqueioId, noitesFechadas };
 }
 
 // ---------------------------------------------------------------------------
@@ -371,4 +390,150 @@ function* alternando(limite: number): Generator<number> {
     yield d;
     yield -d;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Abrir datas e ver o mês
+// ---------------------------------------------------------------------------
+
+export type BloqueioNaTela = typeof bloqueio.$inferSelect;
+
+/**
+ * Os fechamentos que tocam um período.
+ *
+ * Sobreposição, não "começa dentro": um bloqueio de 28/12 a 03/01 tem de
+ * aparecer no calendário de dezembro E no de janeiro, pela mesma razão que
+ * uma reserva aparece — em ambos os meses a casa está fechada.
+ */
+export async function listarBloqueios(
+  tx: Tx,
+  de: Noite,
+  ate: Noite,
+): Promise<BloqueioNaTela[]> {
+  return tx
+    .select()
+    .from(bloqueio)
+    .where(
+      and(
+        lte(bloqueio.primeiraNoite, ate),
+        gte(bloqueio.ultimaNoite, de),
+      ),
+    )
+    .orderBy(bloqueio.primeiraNoite);
+}
+
+/**
+ * Reabre as datas de um fechamento.
+ *
+ * Solta as noites E apaga o bloqueio, na mesma transação. Apagar só o
+ * registro deixaria as noites ocupadas para sempre, sem nada no sistema
+ * explicando por quê — e a recepção veria a casa cheia sem reserva nenhuma.
+ */
+export async function abrirDatas(
+  tx: Tx,
+  anfitriaoId: string,
+  bloqueioId: string,
+  autor: Autor,
+): Promise<{ noitesLiberadas: number }> {
+  const [alvo] = await tx
+    .select()
+    .from(bloqueio)
+    .where(eq(bloqueio.id, bloqueioId))
+    .limit(1);
+  if (!alvo) throw new Error("Fechamento não encontrado.");
+
+  // Conta antes de soltar: depois não há mais o que contar, e o número é o
+  // que a tela usa para dizer quantas noites voltaram a vender.
+  const soltas = await contarNoitesDoBloqueio(tx, bloqueioId);
+  await liberarNoitesPorOrigem(tx, "bloqueio", bloqueioId);
+  await tx.delete(bloqueio).where(eq(bloqueio.id, bloqueioId));
+
+  await auditar(tx, {
+    anfitriaoId,
+    entidade: "bloqueio",
+    entidadeId: bloqueioId,
+    acao: "reabriu",
+    valorAntes: {
+      primeiraNoite: alvo.primeiraNoite,
+      ultimaNoite: alvo.ultimaNoite,
+      motivo: alvo.motivo,
+    },
+    autor,
+  });
+
+  return { noitesLiberadas: soltas };
+}
+
+async function contarNoitesDoBloqueio(tx: Tx, bloqueioId: string): Promise<number> {
+  const linhas = await tx
+    .select({ noite: noiteOcupada.noite })
+    .from(noiteOcupada)
+    .where(
+      and(
+        eq(noiteOcupada.origem, "bloqueio"),
+        eq(noiteOcupada.origemId, bloqueioId),
+      ),
+    );
+  return linhas.length;
+}
+
+export type DiaDoCalendario = {
+  noite: Noite;
+  /** `null` quando a noite está livre. */
+  origem: OrigemNoite | null;
+  origemId: string | null;
+};
+
+export type MesDaUnidade = {
+  unidadeId: string;
+  unidadeNome: string;
+  dias: DiaDoCalendario[];
+};
+
+/**
+ * O mês de cada unidade, noite a noite.
+ *
+ * Monta a partir de `noite_ocupada`, que é a verdade sobre ocupação — não de
+ * reserva nem de bloqueio separadamente. É o que faz o calendário mostrar a
+ * mesma coisa que o motor de disponibilidade decide: se houvesse duas
+ * origens de verdade, a tela e a reserva discordariam algum dia.
+ */
+export async function calendarioDoPeriodo(
+  tx: Tx,
+  de: Noite,
+  ate: Noite,
+): Promise<MesDaUnidade[]> {
+  const unidades = await listarUnidadesAtivas(tx);
+  if (unidades.length === 0) return [];
+
+  const ocupadas = await buscarNoitesOcupadas(tx, {
+    unidadeIds: unidades.map((u) => u.id),
+    de,
+    ate,
+  });
+
+  const porUnidade = new Map<string, Map<Noite, { origem: OrigemNoite; origemId: string }>>();
+  for (const o of ocupadas) {
+    let m = porUnidade.get(o.unidadeId);
+    if (!m) {
+      m = new Map();
+      porUnidade.set(o.unidadeId, m);
+    }
+    m.set(o.noite, { origem: o.origem, origemId: o.origemId });
+  }
+
+  const noites = noitesDaEstadia(de, somarDias(ate, 1));
+
+  return unidades.map((u) => ({
+    unidadeId: u.id,
+    unidadeNome: u.nome,
+    dias: noites.map((noite) => {
+      const o = porUnidade.get(u.id)?.get(noite);
+      return {
+        noite,
+        origem: o?.origem ?? null,
+        origemId: o?.origemId ?? null,
+      };
+    }),
+  }));
 }

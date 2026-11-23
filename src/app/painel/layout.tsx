@@ -6,6 +6,7 @@ import { CASA } from "@/modules/conteudo";
 const LINKS = [
   { href: "/painel", texto: "Início" },
   { href: "/painel/hoje", texto: "Hoje na casa" },
+  { href: "/painel/calendario", texto: "Calendário" },
   { href: "/painel/reservas", texto: "Reservas" },
   { href: "/painel/pedidos", texto: "Pedidos" },
   { href: "/painel/hospedes", texto: "Hóspedes" },

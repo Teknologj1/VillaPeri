@@ -19,7 +19,12 @@ import {
 import { BloqueioEmConflitoError, NoiteIndisponivelError } from "./erros";
 import { liberarNoitesPorOrigem, ocuparNoites } from "./repo";
 import { bloqueio, noiteOcupada } from "./schema";
-import { fecharDatas } from "./service";
+import {
+  abrirDatas,
+  calendarioDoPeriodo,
+  fecharDatas,
+  listarBloqueios,
+} from "./service";
 
 config({ path: [".env.local", ".env"], quiet: true });
 
@@ -351,5 +356,209 @@ describe("fechar datas", () => {
     ).resolves.toBeDefined();
 
     expect(await noitesDaUnidade(unidadeA)).toHaveLength(8); // 01 a 08
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe("reabrir datas", () => {
+  it("solta as noites E apaga o fechamento, na mesma transação", async () => {
+    // Apagar só o registro deixaria as noites ocupadas para sempre, sem nada
+    // no sistema explicando por quê — a recepção veria a casa cheia sem
+    // reserva nenhuma.
+    const { bloqueioId } = await withTenant(anfitriaoId, (tx) =>
+      fecharDatas(tx, anfitriaoId, {
+        escopo: { propriedadeId },
+        primeiraNoite: "2027-09-10",
+        ultimaNoite: "2027-09-12",
+        motivo: "reforma",
+      }),
+    );
+    expect(await noitesDaUnidade(unidadeA)).toHaveLength(3);
+
+    const r = await withTenant(anfitriaoId, (tx) =>
+      abrirDatas(tx, anfitriaoId, bloqueioId, { tipo: "sistema" }),
+    );
+
+    expect(r.noitesLiberadas).toBe(6); // três noites × duas unidades
+    expect(await noitesDaUnidade(unidadeA)).toEqual([]);
+    expect(await noitesDaUnidade(unidadeB)).toEqual([]);
+
+    // Por id, e não "setembro está vazio": outros casos deste arquivo também
+    // fecham datas em setembro, e a asserção larga passaria a depender da
+    // ordem em que os testes rodam.
+    const restantes = await withTenant(anfitriaoId, (tx) =>
+      listarBloqueios(tx, "2027-09-01", "2027-09-30"),
+    );
+    expect(restantes.map((b) => b.id)).not.toContain(bloqueioId);
+  });
+
+  it("não encosta nas noites de reserva", async () => {
+    // O `liberarNoitesPorOrigem` filtra por origem: reabrir um fechamento não
+    // pode soltar a noite de quem reservou.
+    const reservaId = randomUUID();
+    await withTenant(anfitriaoId, (tx) =>
+      ocuparNoites(tx, {
+        anfitriaoId,
+        unidadeId: unidadeA,
+        origem: "reserva",
+        origemId: reservaId,
+        noites: [{ noite: "2027-10-20" }],
+      }),
+    );
+    const { bloqueioId } = await withTenant(anfitriaoId, (tx) =>
+      fecharDatas(tx, anfitriaoId, {
+        escopo: { unidadeId: unidadeA },
+        primeiraNoite: "2027-10-21",
+        ultimaNoite: "2027-10-22",
+        motivo: "reforma",
+      }),
+    );
+
+    await withTenant(anfitriaoId, (tx) =>
+      abrirDatas(tx, anfitriaoId, bloqueioId, { tipo: "sistema" }),
+    );
+
+    expect(await noitesDaUnidade(unidadeA)).toEqual(["2027-10-20"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe("o mês na tela", () => {
+  it("monta a grade de noite_ocupada, com a origem de cada noite", async () => {
+    // De `noite_ocupada`, que é a verdade sobre ocupação — não de reserva e
+    // bloqueio separadamente. Com duas fontes, a tela e o motor de
+    // disponibilidade discordariam algum dia.
+    const reservaId = randomUUID();
+    await withTenant(anfitriaoId, (tx) =>
+      ocuparNoites(tx, {
+        anfitriaoId,
+        unidadeId: unidadeA,
+        origem: "reserva",
+        origemId: reservaId,
+        noites: [{ noite: "2027-11-05" }],
+      }),
+    );
+    await withTenant(anfitriaoId, (tx) =>
+      fecharDatas(tx, anfitriaoId, {
+        escopo: { unidadeId: unidadeA },
+        primeiraNoite: "2027-11-10",
+        ultimaNoite: "2027-11-11",
+        motivo: "uso_proprietario",
+      }),
+    );
+
+    const mes = await withTenant(anfitriaoId, (tx) =>
+      calendarioDoPeriodo(tx, "2027-11-01", "2027-11-30"),
+    );
+
+    const a = mes.find((u) => u.unidadeId === unidadeA)!;
+    expect(a.dias).toHaveLength(30);
+
+    const porNoite = new Map(a.dias.map((d) => [d.noite, d]));
+    expect(porNoite.get("2027-11-05")!.origem).toBe("reserva");
+    expect(porNoite.get("2027-11-05")!.origemId).toBe(reservaId);
+    expect(porNoite.get("2027-11-10")!.origem).toBe("bloqueio");
+    expect(porNoite.get("2027-11-11")!.origem).toBe("bloqueio");
+    // As livres vêm com origem nula, não ausentes: a grade precisa de todos
+    // os dias do mês para desenhar as casas vazias.
+    expect(porNoite.get("2027-11-06")!.origem).toBeNull();
+    expect(a.dias.filter((d) => d.origem === null)).toHaveLength(27);
+  });
+
+  it("o fechamento que atravessa o mês aparece nos DOIS meses", async () => {
+    // Réveillon: fecha 28/12 a 02/01. Em ambos os meses a casa está fechada,
+    // e filtrar por "começa dentro" esconderia metade.
+    await withTenant(anfitriaoId, (tx) =>
+      fecharDatas(tx, anfitriaoId, {
+        escopo: { propriedadeId },
+        primeiraNoite: "2027-12-28",
+        ultimaNoite: "2028-01-02",
+        motivo: "uso_proprietario",
+      }),
+    );
+
+    const dezembro = await withTenant(anfitriaoId, (tx) =>
+      listarBloqueios(tx, "2027-12-01", "2027-12-31"),
+    );
+    const janeiro = await withTenant(anfitriaoId, (tx) =>
+      listarBloqueios(tx, "2028-01-01", "2028-01-31"),
+    );
+
+    expect(dezembro).toHaveLength(1);
+    expect(janeiro).toHaveLength(1);
+    expect(janeiro[0]!.id).toBe(dezembro[0]!.id);
+  });
+
+  it("mês sem nada devolve todos os dias livres", async () => {
+    const mes = await withTenant(anfitriaoId, (tx) =>
+      calendarioDoPeriodo(tx, "2029-02-01", "2029-02-28"),
+    );
+    expect(mes[0]!.dias).toHaveLength(28);
+    expect(mes[0]!.dias.every((d) => d.origem === null)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe("fechar duas vezes as mesmas datas", () => {
+  it("recusa o segundo fechamento e NÃO deixa registro órfão", async () => {
+    // Um fechamento que não é dono de noite nenhuma é um registro que mente:
+    // ao reabrir o que de fato segura as datas, a tela continuaria mostrando
+    // este como fechado, com as noites livres.
+    await withTenant(anfitriaoId, (tx) =>
+      fecharDatas(tx, anfitriaoId, {
+        escopo: { propriedadeId },
+        primeiraNoite: "2028-03-10",
+        ultimaNoite: "2028-03-12",
+        motivo: "reforma",
+      }),
+    );
+
+    const erro = await withTenant(anfitriaoId, (tx) =>
+      fecharDatas(tx, anfitriaoId, {
+        escopo: { propriedadeId },
+        primeiraNoite: "2028-03-10",
+        ultimaNoite: "2028-03-12",
+        motivo: "uso_proprietario",
+      }),
+    ).catch((e: unknown) => e);
+
+    expect(erro).toBeInstanceOf(Error);
+    expect((erro as Error).message).toMatch(/já estão fechadas/);
+
+    // A transação foi desfeita: só o primeiro ficou.
+    const existentes = await withTenant(anfitriaoId, (tx) =>
+      listarBloqueios(tx, "2028-03-01", "2028-03-31"),
+    );
+    expect(existentes).toHaveLength(1);
+    expect(existentes[0]!.motivo).toBe("reforma");
+  });
+
+  it("conta as noites que REALMENTE tomou, não as que pediu", async () => {
+    // Com uma unidade já fechada, fechar a casa inteira toma só o que falta.
+    // Reportar o pretendido faria a tela dizer "4 noites fechadas" quando
+    // duas já estavam.
+    await withTenant(anfitriaoId, (tx) =>
+      fecharDatas(tx, anfitriaoId, {
+        escopo: { unidadeId: unidadeA },
+        primeiraNoite: "2028-04-10",
+        ultimaNoite: "2028-04-11",
+        motivo: "reforma",
+      }),
+    );
+
+    const r = await withTenant(anfitriaoId, (tx) =>
+      fecharDatas(tx, anfitriaoId, {
+        escopo: { propriedadeId },
+        primeiraNoite: "2028-04-10",
+        ultimaNoite: "2028-04-11",
+        motivo: "fechamento",
+      }),
+    );
+
+    // Duas noites × duas unidades = 4 pedidas; a unidade A já tinha as suas.
+    expect(r.noitesFechadas).toBe(2);
   });
 });
