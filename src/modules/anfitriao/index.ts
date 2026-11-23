@@ -7,6 +7,8 @@
  */
 export {
   type Anfitriao,
+  type PropriedadeParaEditar,
+  atualizarPropriedade,
   buscarAnfitriao,
   buscarPerfilComPermissoes,
   buscarPropriedade,

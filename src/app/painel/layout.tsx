@@ -10,7 +10,8 @@ const LINKS = [
   { href: "/painel/reservas", texto: "Reservas" },
   { href: "/painel/pedidos", texto: "Pedidos" },
   { href: "/painel/hospedes", texto: "Hóspedes" },
-  { href: "/painel/simulador", texto: "Tarifas" },
+  { href: "/painel/tarifas", texto: "Tarifas" },
+  { href: "/painel/simulador", texto: "Simulador" },
   { href: "/painel/riia", texto: "RIIA" },
 ];
 

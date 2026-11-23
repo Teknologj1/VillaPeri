@@ -33,7 +33,7 @@ import {
   ocuparNoitesIgnorandoExistentes,
   reservasNasNoites,
 } from "./repo";
-import { bloqueio, noiteOcupada } from "./schema";
+import { bloqueio, noiteOcupada, regraEstadia } from "./schema";
 
 /**
  * Disponibilidade e preço-regra para um pedido, carregando o que o motor
@@ -536,4 +536,81 @@ export async function calendarioDoPeriodo(
       };
     }),
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Editar as regras de estadia
+// ---------------------------------------------------------------------------
+
+export type RegraDeEstadiaParaEditar = {
+  minimoDiarias?: number | null;
+  maximoDiarias?: number | null;
+  antecedenciaMinimaHoras?: number | null;
+  janelaMaximaDias?: number | null;
+  intervaloLimpezaNoites?: number | null;
+  ativa?: boolean;
+};
+
+export async function listarRegrasDeEstadia(tx: Tx) {
+  return buscarRegrasEstadia(tx);
+}
+
+/**
+ * Muda os limites de uma regra de estadia.
+ *
+ * O mínimo de noites é o número que mais aparece numa conversa de reserva —
+ * "nesse feriado o mínimo é três" — e hoje só mudava por código. Como tudo
+ * nas tarifas, muda no site, no simulador e na RIIA ao mesmo tempo, porque
+ * os três perguntam ao mesmo motor.
+ *
+ * Não se edita aqui o ESCOPO nem a condição (`somenteEmFeriado`, dias da
+ * semana): mudar isso muda quais noites a regra cobre, e uma regra que passa
+ * a cobrir outras datas altera o mínimo de períodos que ninguém pediu para
+ * mexer.
+ */
+export async function atualizarRegraDeEstadia(
+  tx: Tx,
+  anfitriaoId: string,
+  id: string,
+  dados: RegraDeEstadiaParaEditar,
+  autor: Autor,
+): Promise<void> {
+  const [antes] = await tx
+    .select()
+    .from(regraEstadia)
+    .where(eq(regraEstadia.id, id))
+    .limit(1);
+  if (!antes) throw new Error("Regra de estadia não encontrada.");
+
+  const minimo = dados.minimoDiarias ?? antes.minimoDiarias;
+  const maximo = dados.maximoDiarias ?? antes.maximoDiarias;
+  if (minimo !== null && maximo !== null && maximo < minimo) {
+    throw new Error(
+      `O máximo (${maximo}) não pode ser menor que o mínimo (${minimo}): ` +
+        "nenhuma estadia caberia na regra, e a casa pararia de vender essas datas.",
+    );
+  }
+
+  await tx
+    .update(regraEstadia)
+    .set({ ...dados, atualizadoEm: new Date() })
+    .where(eq(regraEstadia.id, id));
+
+  await auditar(tx, {
+    anfitriaoId,
+    entidade: "regra_estadia",
+    entidadeId: id,
+    acao: "editou",
+    valorAntes: {
+      nome: antes.nome,
+      minimoDiarias: antes.minimoDiarias,
+      maximoDiarias: antes.maximoDiarias,
+      antecedenciaMinimaHoras: antes.antecedenciaMinimaHoras,
+      janelaMaximaDias: antes.janelaMaximaDias,
+      intervaloLimpezaNoites: antes.intervaloLimpezaNoites,
+      ativa: antes.ativa,
+    },
+    valorDepois: dados,
+    autor,
+  });
 }

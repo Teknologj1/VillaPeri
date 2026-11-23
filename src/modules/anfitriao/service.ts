@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import type { Tx } from "@/db/tenant";
+import { type Autor, auditar } from "@/modules/auditoria";
 
 import {
   anfitriao,
@@ -180,4 +181,59 @@ export async function lembrarResposta(
       statusHttp: dados.statusHttp,
     })
     .onConflictDoNothing();
+}
+
+// ---------------------------------------------------------------------------
+// Editar a propriedade
+// ---------------------------------------------------------------------------
+
+export type PropriedadeParaEditar = {
+  /** Percentual do sinal em pontos-base: 30% = 3000. */
+  sinalPontosBase?: number;
+  checkinPadrao?: string;
+  checkoutPadrao?: string;
+  emailContato?: string | null;
+  whatsappContato?: string | null;
+  endereco?: string | null;
+};
+
+/**
+ * Muda as condições da casa.
+ *
+ * São os números que aparecem em três lugares ao mesmo tempo — no site, no
+ * orçamento de uma reserva nova e na resposta da RIIA. Mudar aqui muda nos
+ * três, porque os três leem daqui; é justamente o que faz não existir uma
+ * segunda tabela de condições para manter.
+ *
+ * Reserva já fechada NÃO muda: o orçamento dela é cópia congelada. O sinal
+ * novo vale para a próxima.
+ */
+export async function atualizarPropriedade(
+  tx: Tx,
+  anfitriaoId: string,
+  dados: PropriedadeParaEditar,
+  autor: Autor,
+): Promise<void> {
+  const antes = await buscarPropriedade(tx);
+
+  await tx
+    .update(propriedade)
+    .set({ ...dados, atualizadoEm: new Date() })
+    .where(eq(propriedade.id, antes.id));
+
+  await auditar(tx, {
+    anfitriaoId,
+    entidade: "propriedade",
+    entidadeId: antes.id,
+    acao: "editou",
+    valorAntes: {
+      sinalPontosBase: antes.sinalPontosBase,
+      checkinPadrao: antes.checkinPadrao,
+      checkoutPadrao: antes.checkoutPadrao,
+      emailContato: antes.emailContato,
+      whatsappContato: antes.whatsappContato,
+    },
+    valorDepois: dados,
+    autor,
+  });
 }
