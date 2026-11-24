@@ -59,7 +59,8 @@ export async function Resultado({ p }: { p: Parametros }) {
       adultos: p.adultos,
       criancas: p.criancas,
       tipoId: tipo.id,
-    });
+      // O painel já leu cabeçalhos em `exigirSessao()`.
+    }, new Date());
     const oferta = disponibilidade.ofertas[0];
 
     let orcamento;

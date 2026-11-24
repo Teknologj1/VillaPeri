@@ -68,7 +68,8 @@ export async function Cotacao({ pedido }: { pedido: Pedido }) {
         adultos: pedido.adultos,
         criancas: pedido.criancas,
         tipoId: tipo.id,
-      }),
+        // O painel já leu cabeçalhos em `exigirSessao()`.
+      }, new Date()),
       listarUnidadesAtivas(tx),
       pedido.solicitacaoId
         ? buscarSolicitacao(tx, pedido.solicitacaoId)

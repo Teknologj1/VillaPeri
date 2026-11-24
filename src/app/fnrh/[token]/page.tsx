@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense } from "react";
 
+import { connection } from "next/server";
+
 import { withTenant } from "@/db/tenant";
 import { anfitriaoPorTokenFnrh } from "@/lib/anfitriao-publico";
 import { formatarPeriodo } from "@/lib/data";
@@ -39,6 +41,18 @@ async function Conteudo({
   params: PageProps<"/fnrh/[token]">["params"];
 }) {
   const { token } = await params;
+
+  /*
+    Mesma razão do /reservar: a validade do link é comparada com o relógio
+    (`fnrhExpiraEm > now()`), e ler o relógio numa rota pré-renderizada exige
+    `connection()` antes, com o Suspense que já existe. Sem isto a página
+    responde 200, manda o shell e não fecha a conexão — foi o que aconteceu no
+    /reservar em produção.
+
+    Aqui ainda não tinha aparecido porque não há link de ficha emitido: com
+    token inválido a função devolve null e a página nunca chega ao relógio.
+  */
+  await connection();
 
   const anfitriaoId = await anfitriaoPorTokenFnrh(token);
   const ficha = anfitriaoId
