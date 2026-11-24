@@ -24,7 +24,8 @@ export const POST = rota({
       criancas: d.criancas,
       tipoId: tipo?.id,
       janelaDias: d.janelaDias,
-    });
+      // Rota de API: já é tempo de requisição por natureza.
+    }, new Date());
 
     return {
       pedida: { entrada: d.entrada, noites: d.noites },

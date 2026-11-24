@@ -42,10 +42,23 @@ import { bloqueio, noiteOcupada, regraEstadia } from "./schema";
  * A mesma função serve o site, o painel e a RIIA. É isso que faz os três
  * darem sempre a mesma resposta — não há um segundo motor em lugar nenhum.
  */
+/**
+ * `agora` é OBRIGATÓRIO de propósito.
+ *
+ * Era `agora: Date = new Date()`, e esse valor padrão escondia uma leitura de
+ * relógio de seis lugares que chamam esta função. Com Cache Components isso
+ * não é detalhe: ler o relógio numa rota pré-renderizada sem `connection()`
+ * antes faz a página responder 200, mandar o shell e nunca fechar a conexão —
+ * em produção, com o build passando e o teste local passando.
+ *
+ * Obrigatório, cada chamador tem de dizer de onde veio o "agora", e quem
+ * precisa de `connection()` fica visível na hora de escrever a chamada, não
+ * num deploy quebrado.
+ */
 export async function consultarDisponibilidade(
   tx: Tx,
   pedido: Pedido,
-  agora: Date = new Date(),
+  agora: Date,
 ): Promise<ResultadoConsulta> {
   const propriedade = await buscarPropriedade(tx);
   const [tipos, unidades, regras, feriadosNaEntrada] = await Promise.all([
@@ -281,7 +294,8 @@ export type Sugestao = {
 export async function sugerirDatas(
   tx: Tx,
   pedido: PedidoDeSugestao,
-  agora: Date = new Date(),
+  /** Obrigatório pela mesma razão de `consultarDisponibilidade`. */
+  agora: Date,
 ): Promise<Sugestao[]> {
   const janela = pedido.janelaDias ?? 21;
   const quantas = pedido.quantas ?? 4;

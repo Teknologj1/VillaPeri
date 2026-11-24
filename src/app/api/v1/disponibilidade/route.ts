@@ -40,7 +40,8 @@ export const POST = rota({
       adultos: d.adultos,
       criancas: d.criancas,
       tipoId: tipo.id,
-    });
+      // Rota de API: já é tempo de requisição por natureza.
+    }, new Date());
     const oferta = disponibilidade.ofertas[0];
 
     let orcamento = null;

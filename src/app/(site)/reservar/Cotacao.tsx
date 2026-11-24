@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+
 import { withTenant } from "@/db/tenant";
 import { anfitriaoDaCasa } from "@/lib/anfitriao-publico";
 import { type Noite, diaDaSemana, noitesDaEstadia } from "@/lib/data";
@@ -41,6 +43,26 @@ export type Pedido = {
 };
 
 export async function Cotacao({ p }: { p: Pedido }) {
+  /*
+    O motor de disponibilidade lê o RELÓGIO — é assim que ele recusa data que
+    já passou. Com Cache Components, ler o relógio dentro de uma rota
+    pré-renderizada exige `<Suspense>` **e** `connection()` antes da leitura
+    (guia de migração do Next, "Fix synchronous IO. It can't be deferred").
+    Esta página tinha o Suspense e não tinha isto.
+
+    O sintoma em produção não foi erro: foi a página responder 200, mandar o
+    shell e NUNCA FECHAR a conexão. O banco recebia as consultas e commitava —
+    31 transações numa requisição travada —, e a renderização não terminava.
+    Num build local passa, porque o shell não é retomado do mesmo jeito.
+
+    Eu já havia posto `connection()` no calendário do painel por esta mesma
+    razão e não trouxe para cá. As telas do painel escapam por acidente:
+    `exigirSessao()` lê cabeçalhos, que também é API de tempo de requisição e
+    interrompe o pré-render.
+  */
+  await connection();
+  const agora = new Date();
+
   let noites: Noite[];
   try {
     noites = noitesDaEstadia(p.entrada, p.saida);
@@ -68,7 +90,8 @@ export async function Cotacao({ p }: { p: Pedido }) {
       adultos: p.adultos,
       criancas: p.criancas,
       tipoId: tipo.id,
-    });
+      // Depois do `connection()` no topo deste componente.
+    }, agora);
     const oferta = ofertas[0];
 
     /*
