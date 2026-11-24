@@ -81,12 +81,56 @@ as reservas, os telefones e os documentos dos hóspedes ficariam legíveis por
 qualquer um que soubesse a URL do projeto.
 
 Nós não usamos o PostgREST para nada — a aplicação fala Postgres direto —,
-então o acesso é retirado inteiro, e o `db:bootstrap` confere com
-`has_schema_privilege` em vez de supor.
+então o acesso é retirado inteiro.
+
+**E revogar do `anon` não basta.** O ACL do schema trazia
+`=U/pg_database_owner`: grantee vazio é o pseudo-papel `PUBLIC`, e `U` é
+`USAGE`. O `anon` nunca teve concessão direta — ele usava o schema por ser,
+como todo papel, membro de `PUBLIC`. Então um `revoke usage on schema public
+from anon` é aceito sem reclamar **e não remove nada**. Quem para aí fica
+achando que fechou.
+
+O que fecha é `revoke usage on schema public from public`, e isso não afeta
+quem tem concessão própria: `villaperi_owner`, `villaperi_app`, `postgres` e
+`service_role` seguem com o que lhes foi concedido.
+
+O `db:bootstrap` faz os dois REVOKEs e **confere** com `has_schema_privilege`.
+Foi essa conferência que pegou o primeiro REVOKE inútil.
 
 O papel `service_role` fica como está: a chave dele não é pública e revogá-la
 quebra o Studio. **Essa chave é acesso total ao banco; trate-a como senha** —
 não a ponha na aplicação, que não precisa dela.
+
+### 5. Daqui não sai conexão de banco — só HTTPS
+
+A saída de rede desta sessão é um proxy HTTPS, e o README dele diz, com todas
+as letras, que **banco de dados por TCP não passa**. Confirmado na prática:
+qualquer host do Supabase responde `CONNECT tunnel failed, 403`.
+
+Por isso existem os três scripts com sufixo `-via-api` / `-remoto`, que falam
+com o banco pela API de consulta do Supabase (`POST
+/v1/projects/{ref}/database/query`), que é HTTPS:
+
+| Script | Para quê |
+|---|---|
+| `npm run db:bootstrap` | papéis e privilégios (também funciona por TCP) |
+| `npm run db:migrate:api` | as migrações, com o mesmo registro que o `db:migrate` |
+| `scripts/sql-via-api.ts` | um `.sql` qualquer: a semente, uma correção |
+
+Dois detalhes que custaram uma execução cada:
+
+- O `fetch` embutido do Node **ignora `HTTPS_PROXY`**. Sem
+  `NODE_USE_ENV_PROXY=1` a falha vem como um `fetch failed` sem explicação.
+- O `pg_dump` recente emite metacomandos de psql (`\restrict`,
+  `\unrestrict`) em volta do despejo. Mandados ao servidor, dão
+  `syntax error at or near "\"`. O `sql-via-api.ts` os filtra.
+
+E um que o registro do migrador obrigou a entender: a API roda como
+`postgres`, então tudo é precedido de `set role villaperi_owner`. Sem isso a
+tabela de controle nasce do papel errado, e a migração aplica o DDL inteiro e
+morre no registro com `permission denied for table __drizzle_migrations`. A
+requisição é uma transação, então a migração desfaz inteira — mas repetiria
+para sempre.
 
 ---
 
@@ -163,12 +207,34 @@ de usar o que foi passado. Nenhum dos dois apareceria antes de produção.
 Quatro coisas, nesta ordem. Nenhuma delas é "abrir o site e ver se carrega".
 
 1. **A API do Supabase está fechada.** Uma chamada anônima a
-   `https://<ref>.supabase.co/rest/v1/reserva?select=*` com a chave pública
-   tem de falhar. Se devolver uma lista, o passo 4 acima não aconteceu.
-2. **O isolamento vale.** `inspecionarIsolamento()` pela conexão de produção:
-   papel `villaperi_app`, `BYPASSRLS` falso, zero tabelas próprias.
+   `https://<ref>.supabase.co/rest/v1/reserva?select=*` com a chave publicável
+   tem de falhar. Se devolver uma lista, o REVOKE de `PUBLIC` não aconteceu.
+2. **O isolamento vale.** Papel `villaperi_app` com `BYPASSRLS` falso e zero
+   tabelas próprias, e nenhuma tabela de domínio sem política de RLS.
 3. **O login funciona.** Entrar de verdade em `/entrar` com o usuário master.
    Não "a página abriu": a sessão criada e o painel respondendo.
 4. **O preço é o mesmo nos três lugares.** Site, simulador e reserva, para as
    mesmas datas. É o primeiro critério do portão da Fase 1A, e com o banco
    novo ele precisa ser refeito.
+
+### Estado em 24/11/2026
+
+Projeto `VillaPeri`, ref `yzkzfncpoeasszgwmoox`, Postgres 17, região
+`us-east-2`, pooler `aws-0-us-east-2.pooler.supabase.com:6543` em modo
+transação.
+
+| | |
+|---|---|
+| Papéis e privilégios | feito, conferido pelo `db:bootstrap` |
+| 21 migrações | aplicadas, 38 tabelas, todas do `villaperi_owner` |
+| Semente | carregada; contagens idênticas à fonte local, tabela por tabela |
+| `anon` pela HTTP | **401 `permission denied for schema public`** nas cinco tabelas testadas |
+| `villaperi_app` | `BYPASSRLS` falso, zero tabelas próprias |
+| Sem política de RLS | 5 tabelas, exatamente as do Better Auth, que são globais por desenho |
+| Variáveis na Vercel | pendente |
+| Usuário master | pendente |
+
+A região `us-east-2` não foi escolhida por nós — o projeto já existia. Vale
+manter: a aplicação roda na Vercel em `us-east`, então as idas e vindas ao
+banco (muitas por página) ficam na mesma costa, e só o salto do visitante até
+a borda cruza para o Brasil. Trocar a região exigiria recriar o projeto.

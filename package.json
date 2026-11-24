@@ -19,7 +19,8 @@
     "usuario:criar": "tsx scripts/criar-usuario.ts",
     "db:studio": "drizzle-kit studio",
     "demo:dados": "tsx scripts/dados-demo.ts",
-    "chave": "tsx scripts/chave-api.ts"
+    "chave": "tsx scripts/chave-api.ts",
+    "db:migrate:api": "tsx scripts/migrar-via-api.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.1",
