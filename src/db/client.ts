@@ -35,10 +35,43 @@ function conexao() {
     // prepared statements nomeados. Com `true`, funciona em desenvolvimento
     // contra o Postgres direto e quebra só no deploy.
     prepare: false,
-    // Em serverless cada instância mantém seu próprio pool; o pooler do banco
-    // é quem concentra as conexões. Mais de 1 por instância só desperdiça
-    // slot.
-    max: env.NODE_ENV === "production" ? 1 : 10,
+
+    /*
+      TRÊS, não uma — e os dois tempos-limite abaixo.
+
+      Era `max: 1` em produção, com a justificativa de que o pooler é quem
+      concentra as conexões e mais de uma por instância só desperdiça slot. A
+      aritmética estava certa e a conclusão, errada: com uma conexão só, a
+      instância não tem folga para UMA baixa.
+
+      O que aconteceu em produção: a função serverless foi congelada no meio de
+      um `withTenant`, logo depois do `begin`. Em modo transação o pooler segura
+      a conexão do servidor até o fim da transação, que nunca veio — vi no
+      `pg_stat_activity`: `state = idle in transaction`, consulta `begin`,
+      parada há quatro minutos. A instância quente ficou com a única conexão
+      dela presa, e TODA requisição que caísse nela travava para sempre, sem
+      nem chegar ao banco. O sintoma era a página responder 200, mandar o shell
+      e não fechar a conexão. Funcionava nas primeiras requisições depois do
+      deploy, quando as instâncias ainda eram frias, e nunca mais depois.
+
+      Requisição abortada pelo visitante faz a mesma coisa. Não é caso raro.
+    */
+    max: env.NODE_ENV === "production" ? 3 : 10,
+
+    /*
+      Esperar por conexão tem prazo. Sem isto, pool esgotado é espera infinita:
+      a requisição nunca falha, nunca responde, e nenhum log registra nada —
+      que foi exatamente o que tornou esse defeito difícil de achar. Com prazo,
+      vira erro visível, e a página mostra "não foi possível consultar agora".
+    */
+    connect_timeout: 10,
+
+    /*
+      Conexão ociosa é devolvida em vez de guardada. Numa função serverless a
+      instância fica congelada entre requisições, e uma conexão ociosa continua
+      ocupando slot do pooler do lado do servidor sem servir a ninguém.
+    */
+    idle_timeout: 20,
   });
 
   return cliente;

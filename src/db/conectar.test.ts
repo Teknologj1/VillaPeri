@@ -78,3 +78,65 @@ describe("conexão com o banco", () => {
     expect(fonte).toMatch(/prepare:\s*false/);
   });
 });
+
+/**
+ * Esperar por conexão TEM DE TER PRAZO, e o pool TEM DE TER FOLGA.
+ *
+ * Em modo transação o pooler segura a conexão do servidor até a transação
+ * terminar. Quando a aplicação morre entre o `begin` e o resto — função
+ * serverless congelada, requisição abortada pelo visitante —, aquela conexão
+ * fica `idle in transaction` e o pool do cliente que a tinha não recupera.
+ *
+ * Com `max: 1`, que era o valor em produção, a instância quente ficava com a
+ * única conexão presa e TODA requisição que caísse nela travava para sempre,
+ * sem chegar ao banco e sem erro em log nenhum: a página respondia 200,
+ * mandava o shell e não fechava a conexão. Diagnosticado no
+ * `pg_stat_activity` de produção, com a consulta `begin` parada há quatro
+ * minutos.
+ *
+ * `connect_timeout` é o que transforma espera infinita em erro visível, que é
+ * a diferença entre um defeito achável e este, que levou horas.
+ */
+describe("resiliência do pool", () => {
+  const fonte = readFileSync("src/db/client.ts", "utf8");
+
+  it("tem folga para uma conexão perdida", () => {
+    const producao = /max:\s*env\.NODE_ENV === "production" \? (\d+)/.exec(fonte);
+    expect(producao, "não achei o `max` de produção em client.ts").not.toBeNull();
+    expect(
+      Number(producao![1]),
+      "com uma conexão só, uma transação pendurada trava a instância inteira, " +
+        "para sempre, sem erro",
+    ).toBeGreaterThan(1);
+  });
+
+  it("não espera por conexão para sempre", () => {
+    expect(
+      /connect_timeout:\s*\d+/.test(fonte),
+      "sem connect_timeout, pool esgotado é espera infinita: a requisição " +
+        "nunca falha, nunca responde, e nada aparece em log",
+    ).toBe(true);
+  });
+
+  it("devolve conexão ociosa", () => {
+    expect(/idle_timeout:\s*\d+/.test(fonte)).toBe(true);
+  });
+});
+
+/**
+ * E a rede de segurança do lado do banco, que vale mesmo com bug no cliente.
+ */
+describe("bootstrap do banco gerenciado", () => {
+  const fonte = readFileSync("scripts/bootstrap-remoto.ts", "utf8");
+
+  it("põe prazo em transação pendurada do papel da aplicação", () => {
+    expect(
+      /villaperi_app\s+set idle_in_transaction_session_timeout/.test(fonte),
+      "é o que transforma `quebrado para sempre` em `quebrado por 20 segundos`",
+    ).toBe(true);
+  });
+
+  it("e confere que o prazo ficou lá", () => {
+    expect(fonte).toContain("idle_in_transaction_session_timeout=%");
+  });
+});
