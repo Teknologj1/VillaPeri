@@ -242,6 +242,37 @@ async function principal() {
     `);
     console.log("    app lê e escreve; nunca cria");
 
+    console.log("==> Tempos-limite dos papéis");
+    /*
+      A rede de segurança contra transação pendurada.
+
+      Em modo transação o pooler segura a conexão do servidor até a transação
+      terminar. Se a aplicação morre entre o `begin` e o resto — função
+      serverless congelada, requisição abortada pelo visitante —, aquela
+      conexão fica `idle in transaction` para sempre, e o pool do cliente que a
+      tinha nunca mais consulta nada. Foi o que derrubou a cotação do site em
+      produção: página respondendo 200, mandando o shell e não fechando a
+      conexão, sem erro em log nenhum.
+
+      Com isto o próprio Postgres recolhe a conexão em 20 segundos. Vale
+      mesmo que o cliente tenha bug, e é o que transforma "quebrado para
+      sempre" em "quebrado por 20 segundos".
+
+      O `statement_timeout` é higiene da mesma família: consulta que passa de
+      20 s na aplicação é defeito, não lentidão. A consulta mais pesada que
+      temos — o motor de disponibilidade — roda em menos de um segundo.
+
+      O papel de migração tem prazo maior: migração e seed rodam em
+      transações longas de propósito, e não ficam penduradas porque não são
+      serverless.
+    */
+    await ex.rodar(`
+      alter role villaperi_app   set idle_in_transaction_session_timeout = '20s';
+      alter role villaperi_app   set statement_timeout = '20s';
+      alter role villaperi_owner set idle_in_transaction_session_timeout = '120s';
+    `);
+    console.log("    app: 20s em transação e por comando; owner: 120s");
+
     console.log("==> Fechando a API REST do provedor");
     // `anon` e `authenticated` são os papéis que o PostgREST do Supabase usa
     // com a chave pública. Nós não usamos o PostgREST; deixar isso aberto
@@ -301,11 +332,26 @@ async function principal() {
         ) as anon_usa_schema
     `);
 
+    const [prazos] = await ex.consultar<{ app_em_transacao: string | null }>(`
+      select (
+        select substring(c, position('=' in c) + 1)
+        from unnest(coalesce(rolconfig, '{}')) as c
+        where c like 'idle_in_transaction_session_timeout=%'
+      ) as app_em_transacao
+      from pg_roles where rolname = 'villaperi_app'
+    `);
+
     const [podeCriar] = await ex.consultar<{ cria: boolean }>(
       `select has_database_privilege('villaperi_owner', current_database(), 'create') as cria`,
     );
 
     const problemas: string[] = [];
+    if (!prazos?.app_em_transacao) {
+      problemas.push(
+        "villaperi_app sem idle_in_transaction_session_timeout: uma transação " +
+          "pendurada trava a instância da aplicação indefinidamente",
+      );
+    }
     if (podeCriar?.cria !== true) {
       problemas.push(
         "villaperi_owner sem CREATE no banco: `db:migrate` falha no primeiro " +

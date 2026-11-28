@@ -101,7 +101,50 @@ O papel `service_role` fica como está: a chave dele não é pública e revogá-
 quebra o Studio. **Essa chave é acesso total ao banco; trate-a como senha** —
 não a ponha na aplicação, que não precisa dela.
 
-### 5. Daqui não sai conexão de banco — só HTTPS
+### 5. Uma conexão só não dá folga para uma baixa
+
+Esta derrubou a cotação do site em produção, e levou horas para achar porque
+**não produz erro nenhum**.
+
+Em modo transação o pooler segura a conexão do servidor até a transação
+terminar. Se a aplicação morre entre o `begin` e o resto — função serverless
+congelada, requisição abortada pelo visitante —, aquela conexão fica
+`idle in transaction` indefinidamente. O diagnóstico veio do
+`pg_stat_activity` de produção:
+
+```
+state = idle in transaction   consulta = begin   parado_ha = 00:03:55
+```
+
+O cliente tinha `max: 1` em produção, com a justificativa de que o pooler é
+quem concentra as conexões e mais de uma por instância só desperdiça slot. A
+aritmética estava certa e a conclusão, errada: a instância quente ficou com a
+única conexão dela presa, e **toda requisição que caísse nela travava para
+sempre**, sem chegar ao banco. A página respondia 200, mandava o shell e não
+fechava a conexão. Funcionava nas primeiras requisições depois de cada deploy,
+quando as instâncias ainda eram frias, e nunca mais depois — o que faz o
+defeito parecer intermitente e aleatório.
+
+Três mudanças, em duas camadas:
+
+| Onde | O que | Por quê |
+|---|---|---|
+| `src/db/client.ts` | `max: 3` | folga para uma baixa |
+| `src/db/client.ts` | `connect_timeout: 10` | espera infinita vira erro visível |
+| `src/db/client.ts` | `idle_timeout: 20` | devolve slot do pooler entre requisições |
+| banco (`db:bootstrap`) | `idle_in_transaction_session_timeout = 20s` no papel da aplicação | vale mesmo com bug no cliente |
+| banco (`db:bootstrap`) | `statement_timeout = 20s` | consulta que passa disso é defeito, não lentidão |
+
+O prazo no banco é o que importa mais: transforma "quebrado para sempre" em
+"quebrado por 20 segundos", independentemente do cliente. O papel de migração
+tem 120 s, porque migração e seed usam transações longas de propósito e não
+rodam em serverless.
+
+E a lição de método: **espera sem prazo não aparece em log.** O
+`connect_timeout` não é ajuste fino de desempenho — é o que faz a próxima
+ocorrência deste tipo de defeito ser achável.
+
+### 6. Daqui não sai conexão de banco — só HTTPS
 
 A saída de rede desta sessão é um proxy HTTPS, e o README dele diz, com todas
 as letras, que **banco de dados por TCP não passa**. Confirmado na prática:
@@ -231,8 +274,9 @@ transação.
 | `anon` pela HTTP | **401 `permission denied for schema public`** nas cinco tabelas testadas |
 | `villaperi_app` | `BYPASSRLS` falso, zero tabelas próprias |
 | Sem política de RLS | 5 tabelas, exatamente as do Better Auth, que são globais por desenho |
-| Variáveis na Vercel | pendente |
-| Usuário master | pendente |
+| Variáveis na Vercel | gravadas, conferidas uma a uma (papéis certos, nada invertido) |
+| Usuário master | criado, e o login conferido em navegador de verdade |
+| Prazos dos papéis | app 20 s em transação e por comando; owner 120 s |
 
 A região `us-east-2` não foi escolhida por nós — o projeto já existia. Vale
 manter: a aplicação roda na Vercel em `us-east`, então as idas e vindas ao
